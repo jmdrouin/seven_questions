@@ -1,6 +1,9 @@
 # Don't include big database
 data/ml-20m/*
 
+# Don't include tmp folder
+tmp/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
