@@ -1,5 +1,5 @@
 # Don't include big database
-data/ml-20m/*
+data/*/*
 
 # Don't include tmp folder
 tmp/*

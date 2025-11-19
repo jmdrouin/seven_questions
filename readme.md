@@ -1,12 +1,12 @@
 # Data:
-Download the database ml-20m.zip from
-https://grouplens.org/datasets/movielens/20m/
-and unzip it as ./data/ml-20m/...
+Download the database ml-32m.zip from
+https://grouplens.org/datasets/movielens/
+and unzip it as ./data/ml-32m/...
 
 File structure:
 movie_recoco/
 ├── data/
-    └── ml-20m/
+    └── ml-32m/
         ├── genome-scores.csv
         ├── genome-tags.csv
         ├── links.csv
