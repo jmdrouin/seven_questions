@@ -21,7 +21,7 @@ def simplePlot():
 
 
 def data():
-    dir = "data/ml-20m/"
+    dir = "data/ml-32m/"
     file = "ratings.csv"
     print("\n")
     print("Loading", dir + file, "...")
