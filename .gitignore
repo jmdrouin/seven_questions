@@ -4,6 +4,9 @@ data/*/*
 # Don't include tmp folder
 tmp/*
 
+# Private api keys
+*/omdb_key.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
