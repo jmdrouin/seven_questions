@@ -11,8 +11,7 @@ import numpy as np
 def main():
     df = top_ratings()
 
-    (residuals, user_bias, item_bias, global_bias) = get_residuals_and_bias(df)
-
+    (residuals, user_bias, item_bias) = get_residuals_and_bias(df)
     num_components = 4
     movies_df = find_dimensions(residuals, user_bias, item_bias, num_components)
     explore_results(movies_df)

@@ -1,25 +1,36 @@
 # Approximate user_bias, item_bias and global_bias from the given ratings dataframe.
 # Model: rating(u, i) = global_bias + user_bias(u) + item_bias(i) + residual(u, i)
 # Output: (residuals, user_bias, item_bias, global_bias)
+
 def get_residuals_and_bias(df):
-    global_bias = df['rating'].mean()
-    df['rating_0'] = df['rating'] - global_bias
+    df['global_bias'] = 0
+    df['user_bias'] = 0
+    df['item_bias'] = 0
+
+    for i in range(5):
+        df = update_bias(df)
+        error = ((df['global_bias'] + df['user_bias'] + df['item_bias'] - df['rating']) ** 2).mean()
+        print("MSE after iteration", i, " >> ", error)
+
+    df['residual'] = df['rating'] - df['global_bias'] - df['user_bias'] - df['item_bias']
+    user_bias = df.groupby("userId")["user_bias"].mean().reset_index()
+    item_bias = df.groupby("movieId")["item_bias"].mean().reset_index()
+    return (df, user_bias, item_bias)
+
+def update_bias(df):
+    # global bias
+    df['global_bias'] = df['rating'].mean() - df['user_bias'].mean() - df['item_bias'].mean()
     
-    # USER_BIAS:
-    user_bias = df.groupby("userId")["rating_0"].mean().reset_index()
-    user_bias = user_bias.rename({"rating_0": "user_bias"}, axis=1)
-    df = df.merge(user_bias, on="userId", how="left")
-    df["rating_1"] = df["rating_0"] - df["user_bias"]
+    # user bias:
+    df = df.drop('user_bias', axis=1)
+    users_df = df.groupby("userId").mean().reset_index()
+    users_df['user_bias'] = users_df["rating"] - users_df["global_bias"] - users_df["item_bias"]
+    df = df.merge(users_df[["userId", "user_bias"]], on="userId", how="left")
 
-    # FILM_BIAS
-    item_bias = df.groupby("movieId")["rating_1"].mean().reset_index()
-    item_bias = item_bias.rename({"rating_1": "item_bias"}, axis=1)
-    df = df.merge(item_bias, on="movieId", how="left")
-    df["rating_2"] = df["rating_1"] - df["user_bias"]
+    # item bias:
+    df = df.drop('item_bias', axis=1)
+    item_df = df.groupby("movieId").mean().reset_index()
+    item_df['item_bias'] = item_df["rating"] - item_df["global_bias"] - item_df["user_bias"]
+    df = df.merge(item_df[["movieId", "item_bias"]], on="movieId", how="left")
 
-    # ESTIMATION OF QUALITY
-    df["estimation"] = global_bias + df["user_bias"] + df["item_bias"]
-    df["residual"] = df["rating"] - df["estimation"]
-
-    residuals = df[["userId", "movieId", "residual"]]
-    return (residuals, user_bias, item_bias, global_bias)
+    return df
