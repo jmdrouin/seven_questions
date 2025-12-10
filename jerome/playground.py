@@ -6,15 +6,95 @@ from imdb import make_top_movies_dataframe
 import matplotlib.pyplot as plt
 from bias import get_residuals_and_bias
 import numpy as np
+from sklearn.model_selection import train_test_split
+
+from ebias import exponential_bias
 
 
 def main():
-    df = top_ratings()
+    original_df = top_ratings()
 
-    (residuals, user_bias, item_bias) = get_residuals_and_bias(df)
-    num_components = 4
-    movies_df = find_dimensions(residuals, user_bias, item_bias, num_components)
-    explore_results(movies_df)
+    # random split.
+    # Note: this will break if all items from a movie or a user are taken away in the test sample
+    # TODO: Should we split out the most recent data instead?
+    train_df, test_df = train_test_split(original_df, test_size=0.5, random_state=4)
+    df = train_df.copy()
+
+    (residuals, user_bias, item_bias) = get_residuals_and_bias(df, n_iter=0)
+
+    num_components = 5
+    (movies_df, users_df) = find_dimensions(residuals, user_bias, item_bias, num_components)
+    #explore_results(movies_df)
+
+    print(residuals.head())
+
+    # Prediction model
+    train_df = residuals \
+        .drop(["user_bias", "item_bias"], axis=1) \
+        .merge(movies_df, on="movieId") \
+        .merge(users_df, on="userId")
+    y_train = train_df["residual"]
+
+    print(residuals.columns)
+
+    x_cols = []
+    cps = range(num_components)
+    for i in cps:
+        _i = "_" + str(i)
+        x_col = "prod" + _i
+        x_cols.append(x_col)
+        train_df[x_col] = train_df["user_dim" + _i] * train_df["dim" + _i]
+
+        x_col = "dist" + _i
+        x_cols.append(x_col)
+        train_df[x_col] = (train_df["user_dim" + _i] - train_df["dim" + _i]).abs()
+
+    #x_cols.append("dot")
+    #movies = train_df[ ["dim_" + str(i) for i in cps] ]
+    #users = train_df[ ["user_dim_" + str(i) for i in cps] ]
+    #train_df["dot"] = (movies.values * users.values).sum(axis=1)
+    
+
+    x_train = train_df[x_cols]
+
+    from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import mean_squared_error
+
+    model = LinearRegression()
+
+    if 0==1:
+        # from sklearn.ensemble import RandomForestRegressor
+        #print("Building rfg...")
+        model = RandomForestRegressor(
+            n_estimators=10,
+            max_depth=5,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            random_state=100,
+            max_features="sqrt",
+            n_jobs=-1
+        )
+
+    model.fit(x_train, y_train)
+    print("...done")
+
+    y_train_pred = model.predict(x_train)
+    mse = mean_squared_error(y_train_pred, y_train)
+
+    train_df["prediction"] = y_train_pred
+
+    print(train_df.head())
+
+    print("mse:", mse)
+
+    #coef_table = pd.DataFrame({
+    #    "feature": x_train.columns,
+    #    "coef": model.coef_
+    #})
+    #print(coef_table)
+
+
+
 
 def explore_results(movies_df):
     dim_cols = [c for c in movies_df.columns if c[:4] == "dim_"]
@@ -22,7 +102,15 @@ def explore_results(movies_df):
     full_movies_df = full_movies_df.merge(movies_df, on="movieId")
 
     #find_points(full_movies_df, dim_cols)
-    find_clusters(full_movies_df, dim_cols)
+    k = 10
+    df = find_clusters(full_movies_df, dim_cols, n_clusters=k)
+    print(df.head())
+
+    for i in range(k):
+        print("CLUSTER", i)
+        dfk = df[df['cluster']==i].sort_values(by="ratings_count")
+        print(dfk.tail())
+
     return
 
     print(full_movies_df[dim_cols].describe())
@@ -52,13 +140,12 @@ def explore_results(movies_df):
 
     #show_scatter_plot(good_movies, x = 'dim_0', y = 'dim_2', n = 100)
 
-def find_clusters(movies_df, dim_cols):
+def find_clusters(movies_df, dim_cols, n_clusters,  random_state=100):
     from sklearn.cluster import KMeans
-    k = 10   # choose number of clusters
-    km = KMeans(n_clusters=k, random_state=42)
+    km = KMeans(n_clusters=n_clusters, random_state=random_state)
     labels = km.fit_predict(movies_df[dim_cols])
     movies_df["cluster"] = labels
-    print(movies_df.head())
+    return movies_df
 
     import matplotlib.pyplot as plt
 
@@ -125,21 +212,35 @@ def top_ratings():
 # return a movies dataframe merged with those dimensions as columns: dim_0, dim_1...
 def find_dimensions(ratings_df, users_df, movies_df, num_components):
     (sparse_ratings, users_df, movies_df) = get_sparse_ratings(ratings_df, users_df, movies_df)
-    movies_df = reduce_dimensions(sparse_ratings, movies_df, num_components)
+    (movies_df, users_df) = reduce_dimensions(sparse_ratings, movies_df, users_df, num_components)
     movies_df = movies_df.drop(["movie_code"], axis=1)
-    return movies_df
+    users_df = users_df.drop(["user_code"], axis=1)
+    return (movies_df, users_df)
 
-def reduce_dimensions(sparse_ratings, item_bias, num_components):
+def reduce_dimensions(sparse_ratings, item_bias, user_bias, num_components):
     k=num_components
-    svd = TruncatedSVD(n_components=k, random_state=0)
+    svd = TruncatedSVD(n_components=k, random_state=100)
+
     movie_embeddings = svd.fit_transform(sparse_ratings)
+    user_factors = svd.components_.T
+
+    # Merge back user dims
+    user_embeddings_df = pd.DataFrame(
+        user_factors,
+        columns=["user_dim_" + str(i) for i in range(k)]
+    )
+    user_embeddings_df["user_code"] = np.arange(len(user_factors))
+    user_bias = user_bias.merge(user_embeddings_df, on="user_code")
+
+    # Merge back movie dims
     movie_embeddings_df = pd.DataFrame(
         movie_embeddings,
         columns=["dim_" + str(i) for i in range(k)]
     )
-    movie_embeddings_df.index.name = "movie_code"
+    movie_embeddings_df["movie_code"] = np.arange(len(movie_embeddings))
     item_bias = item_bias.merge(movie_embeddings_df, on="movie_code")
-    return item_bias
+
+    return (item_bias, user_bias)
 
 # Return a sparse matrix (coo_matrix) from a ratings dataframe.
 # To avoid empty columns and rows, we create user_code and movie_code,

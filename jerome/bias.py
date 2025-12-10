@@ -2,15 +2,21 @@
 # Model: rating(u, i) = global_bias + user_bias(u) + item_bias(i) + residual(u, i)
 # Output: (residuals, user_bias, item_bias, global_bias)
 
-def get_residuals_and_bias(df):
+from sklearn.metrics import mean_squared_error
+
+def get_residuals_and_bias(df, n_iter=5):
     df['global_bias'] = 0
     df['user_bias'] = 0
     df['item_bias'] = 0
 
-    for i in range(5):
+    estimation = df['global_bias'] + df['user_bias'] + df['item_bias']
+    print("MSE without bias cleanup ", mean_squared_error(estimation, df['rating']))
+
+    for i in range(n_iter):
         df = update_bias(df)
-        error = ((df['global_bias'] + df['user_bias'] + df['item_bias'] - df['rating']) ** 2).mean()
-        print("MSE after iteration", i, " >> ", error)
+        estimation = df['global_bias'] + df['user_bias'] + df['item_bias']
+        print("MSE after iteration", i, " >> ", mean_squared_error(estimation, df['rating']))
+
 
     df['residual'] = df['rating'] - df['global_bias'] - df['user_bias'] - df['item_bias']
     user_bias = df.groupby("userId")["user_bias"].mean().reset_index()
