@@ -14,15 +14,27 @@ from ebias import exponential_bias
 def main():
     original_df = top_ratings()
 
+    #from sklearn.preprocessing import QuantileTransformer
+    #transformer = QuantileTransformer(output_distribution="normal")
+    #original_df['raw_rating'] = original_df['rating']
+    #original_df['rating'] = transformer.fit_transform(original_df[['rating']])
+
+    # Let's force ratings to be in a useable scale:
+    #def transform_rating(x):
+    #    if x < 1: x = 1
+    #    p = x / 6
+    #    return np.log(p / (1 - p))
+    #original_df['rating'] = original_df['rating'].apply(transform_rating)
+
     # random split.
     # Note: this will break if all items from a movie or a user are taken away in the test sample
     # TODO: Should we split out the most recent data instead?
-    train_df, test_df = train_test_split(original_df, test_size=0.5, random_state=4)
+    train_df, test_df = train_test_split(original_df, test_size=0.2, random_state=4)
     df = train_df.copy()
 
-    (residuals, user_bias, item_bias) = get_residuals_and_bias(df, n_iter=0)
+    (residuals, user_bias, item_bias) = get_residuals_and_bias(df, n_iter=5)
 
-    num_components = 5
+    num_components = 40
     (movies_df, users_df) = find_dimensions(residuals, user_bias, item_bias, num_components)
     #explore_results(movies_df)
 
@@ -45,35 +57,41 @@ def main():
         x_cols.append(x_col)
         train_df[x_col] = train_df["user_dim" + _i] * train_df["dim" + _i]
 
-        x_col = "dist" + _i
-        x_cols.append(x_col)
-        train_df[x_col] = (train_df["user_dim" + _i] - train_df["dim" + _i]).abs()
+        #x_col = "diff" + _i
+        #x_cols.append(x_col)
+        #train_df[x_col] = (train_df["user_dim" + _i] - train_df["dim" + _i]).abs()
+
+        #x_col = "prod2" + _i
+        #x_cols.append(x_col)
+        #train_df[x_col] = (train_df["user_dim" + _i] * train_df["dim" + _i]) ** 2
+
+        #x_col = "prodh" + _i
+        #x_cols.append(x_col)
+        #train_df[x_col] = (train_df["user_dim" + _i] * train_df["dim" + _i]) ** 3
 
     #x_cols.append("dot")
     #movies = train_df[ ["dim_" + str(i) for i in cps] ]
     #users = train_df[ ["user_dim_" + str(i) for i in cps] ]
     #train_df["dot"] = (movies.values * users.values).sum(axis=1)
     
-
     x_train = train_df[x_cols]
 
     from sklearn.linear_model import LinearRegression
     from sklearn.metrics import mean_squared_error
 
-    model = LinearRegression()
-
     if 0==1:
-        # from sklearn.ensemble import RandomForestRegressor
-        #print("Building rfg...")
+        from sklearn.ensemble import RandomForestRegressor
+        print("Building rfg...")
         model = RandomForestRegressor(
-            n_estimators=10,
-            max_depth=5,
+            n_estimators=50,
+            max_depth=8,
             min_samples_split=10,
             min_samples_leaf=5,
             random_state=100,
-            max_features="sqrt",
             n_jobs=-1
         )
+    else:
+        model = LinearRegression()
 
     model.fit(x_train, y_train)
     print("...done")
@@ -86,14 +104,20 @@ def main():
     print(train_df.head())
 
     print("mse:", mse)
+    print("score:", model.score(x_train, y_train))
 
-    #coef_table = pd.DataFrame({
-    #    "feature": x_train.columns,
-    #    "coef": model.coef_
-    #})
-    #print(coef_table)
+    coef_table = pd.DataFrame({
+        "feature": x_train.columns,
+        "coef": model.coef_
+    })
+    print(coef_table)
 
+    print(x_train.corr())
 
+    print(train_df.head())
+
+    # HERE: test with the test data
+    
 
 
 def explore_results(movies_df):
