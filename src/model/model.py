@@ -13,15 +13,20 @@ def main(
     train_df, test_df = split_data(top_ratings(), test_size=test_size)
 
     find_model(train_df, num_components = num_components)
+
     return
 
 def find_model(
     df,
     num_components=None
 ):
+    # TODO: Should we restrict the dataset even more (min ratings per user/movie?)
+
     # TODO: Improve this transformation
     # TODO: This should just return a Transformer
+    print(df.head())
     (residuals, user_bias, item_bias) = get_residuals_and_bias(df, n_iter=2)
+    print(residuals.head())
 
     (item_df, user_df) = find_dimensions(residuals, user_bias, item_bias, num_components)
     print(residuals.head())
@@ -46,17 +51,12 @@ def cf_model(residuals, item_df, user_df, num_components):
     item_cols = ["dim_" + str(i) for i in range(num_components)]
     A = df[user_cols].to_numpy()
     B = df[item_cols].to_numpy()
-    cos_sim = np.sum(A * B, axis=1) / (
-        np.linalg.norm(A, axis=1) * np.linalg.norm(B, axis=1)
-    )
-
-    df["cos_sim_0"] = cos_sim ** 0
-    df["cos_sim_1"] = cos_sim
-    df["cos_sim_2"] = cos_sim ** 2
-    df["cos_sim_3"] = cos_sim ** 3
-    X = df[["cos_sim_" + str(i) for i in [0,1,2,3]]]
+    df["dot"] = np.sum(A * B, axis=1)
+    X = df[["dot"]]
 
     # TODO: A linear model is the easiest, not the best.
+    # The linear model doesn't find an ideal coefficient of 1, which is what I'd expect,
+    # but probably I understand it wrong.
     model = get_linear_model(X, y)
     y_pred = model.predict(X)
     mse = mean_squared_error(y, y_pred)
