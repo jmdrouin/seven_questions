@@ -3,43 +3,48 @@
 # Output: (residuals, user_bias, item_bias, global_bias)
 
 from sklearn.metrics import mean_squared_error
-
 from sklearn.base import BaseEstimator, TransformerMixin
+import numpy as np
 
 class BiasTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, n_iter=3):
         self._n_iter = n_iter
 
     def fit(self, X, y=None):
-        result = _get_residuals_and_bias(X, n_iter=self._n_iter)
-        (self.residuals, self.user_bias, self.item_bias) = result
+        result = _get_bias(X, n_iter=self._n_iter)
+        (self.global_bias, self.user_bias, self.item_bias) = result
         return self
 
     def transform(self, X):
-        # TODO: This will only return something for the original data!
+        # TODO: NaNs will happen! (for items and users not present at the time of fit)
         cols = ["userId", "movieId", "residual", "user_bias", "global_bias", "item_bias"]
-        return X.merge(self.residuals[cols], on=["userId", "movieId"], how="left")
+        X = X.merge(self.user_bias, on="userId", how="left")
+        X = X.merge(self.item_bias, on="movieId", how="left")
+        X["global_bias"] = self.global_bias
+        X["residual"] = X["rating"] - X["global_bias"] - X["user_bias"] - X["item_bias"]
+        return X
 
-def _get_residuals_and_bias(df, n_iter=5):
+def _get_bias(df, n_iter=5):
     df=df.copy()
+    target = 'rating'
+
     df['global_bias'] = 0
     df['user_bias'] = 0
     df['item_bias'] = 0
 
     estimation = df['global_bias'] + df['user_bias'] + df['item_bias']
-    print("MSE without bias cleanup ", mean_squared_error(estimation, df['rating']))
+    print("MSE without bias cleanup ", mean_squared_error(estimation, df[target]))
 
     for i in range(n_iter):
         df = _update_bias(df)
         estimation = df['global_bias'] + df['user_bias'] + df['item_bias']
-        print("MSE after iteration", i, " >> ", mean_squared_error(estimation, df['rating']))
+        print("MSE after iteration", i, " >> ", mean_squared_error(estimation, df[target]))
 
-    df['residual'] = df['rating'] - df['global_bias'] - df['user_bias'] - df['item_bias']
+    df['residual'] = df[target] - df['global_bias'] - df['user_bias'] - df['item_bias']
 
-    # Don't return those. They can be retrieved.
     user_bias = df.groupby("userId")["user_bias"].mean().reset_index()
     item_bias = df.groupby("movieId")["item_bias"].mean().reset_index()
-    return (df, user_bias, item_bias)
+    return (df['global_bias'].mean(), user_bias, item_bias)
 
 def _update_bias(df):
     # global bias

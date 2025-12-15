@@ -10,6 +10,7 @@ def main(
 ):
     # Note: this will break if all items from a movie or a user are taken away in the test sample
     # TODO: Should we split out the most recent data instead?
+    # TODO: If we focus on cold-start users then we should split USERS not ratings
     train_df, test_df = split_data(top_ratings(), test_size=test_size)
 
     find_model(train_df, num_components = num_components)
@@ -23,14 +24,37 @@ def find_model(
     # TODO: Should we restrict the dataset even more (min ratings per user/movie?)
     # TODO: Improve this transformation
 
+    def spread(x):
+        return np.log2(-np.log2(1 - x / 6))
+    def despread(x):
+        return 6.0 * (1 - 2.0 ** -(2.0 ** x))
+    
+    df['original_rating'] = df['rating']
+    df['rating'] = spread(df['rating'])
+
     transformer = BiasTransformer()
     transformer.fit(df)
     residuals = transformer.transform(df)
-    
+
+    residuals['bias'] = residuals['user_bias'] + residuals['item_bias'] + residuals['global_bias']
+    residuals['pred_rating'] = despread(residuals['bias'])
+    residuals['calc_rating'] = despread(residuals['residual'] + residuals['bias'])
+
+    mse = mean_squared_error(residuals['pred_rating'], residuals['original_rating'])
+    print("MSE", mse)
+
+    print(residuals.head(20))
+
+    #import seaborn as sns
+    #sns.histplot(residuals['residual'], bins=30, kde=True)
+    #import matplotlib.pyplot as plt
+    #plt.show()
+
     (item_df, user_df) = find_dimensions(residuals, num_components)
     # Note: run explore_results(movies_df) to explore item dimensions
 
     _ = cf_model(residuals, item_df, user_df, num_components)
+
     # TODO: Here, test the model using the test data.
     # However the test data doesn't have the dimensions or the biases yet.
 
