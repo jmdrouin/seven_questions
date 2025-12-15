@@ -4,7 +4,25 @@
 
 from sklearn.metrics import mean_squared_error
 
-def get_residuals_and_bias(df, n_iter=5):
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class BiasTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, n_iter=3):
+        self._n_iter = n_iter
+
+    def fit(self, X, y=None):
+        result = _get_residuals_and_bias(X, n_iter=self._n_iter)
+        (self.residuals, self.user_bias, self.item_bias) = result
+        print("NAS (self.residuals):", self.residuals.isna().sum())
+        return self
+
+    def transform(self, X):
+        # TODO: This will only return something for the original data!
+        cols = ["userId", "movieId", "residual", "user_bias", "global_bias", "item_bias"]
+        return X.merge(self.residuals[cols], on=["userId", "movieId"], how="left")
+
+def _get_residuals_and_bias(df, n_iter=5):
+    df=df.copy()
     df['global_bias'] = 0
     df['user_bias'] = 0
     df['item_bias'] = 0
@@ -18,6 +36,8 @@ def get_residuals_and_bias(df, n_iter=5):
         print("MSE after iteration", i, " >> ", mean_squared_error(estimation, df['rating']))
 
     df['residual'] = df['rating'] - df['global_bias'] - df['user_bias'] - df['item_bias']
+
+    # Don't return those. They can be retrieved.
     user_bias = df.groupby("userId")["user_bias"].mean().reset_index()
     item_bias = df.groupby("movieId")["item_bias"].mean().reset_index()
     return (df, user_bias, item_bias)
@@ -25,7 +45,7 @@ def get_residuals_and_bias(df, n_iter=5):
 def _update_bias(df):
     # global bias
     df['global_bias'] = df['rating'].mean() - df['user_bias'].mean() - df['item_bias'].mean()
-    
+
     # user bias:
     df = df.drop('user_bias', axis=1)
     users_df = df.groupby("userId").mean().reset_index()

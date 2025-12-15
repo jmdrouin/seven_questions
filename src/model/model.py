@@ -1,6 +1,6 @@
 from dataframes import top_ratings
 from split_data import split_data
-from transformer import get_residuals_and_bias
+from transformer import BiasTransformer
 from matrix_factorization import find_dimensions
 import numpy as np
 
@@ -21,13 +21,16 @@ def find_model(
     num_components=None
 ):
     # TODO: Should we restrict the dataset even more (min ratings per user/movie?)
-
     # TODO: Improve this transformation
-    # TODO: This should just return a Transformer
-    print(df.head())
-    (residuals, user_bias, item_bias) = get_residuals_and_bias(df, n_iter=2)
-    print(residuals.head())
 
+    transformer = BiasTransformer()
+    transformer.fit(df)
+    residuals = transformer.transform(df)
+
+    # TODO: Remove those. They can be retrieved when needed
+    user_bias = transformer.user_bias
+    item_bias = transformer.item_bias
+    
     (item_df, user_df) = find_dimensions(residuals, user_bias, item_bias, num_components)
     print(residuals.head())
     # Note: run explore_results(movies_df) to explore item dimensions
