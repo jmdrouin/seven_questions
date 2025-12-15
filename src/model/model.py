@@ -26,13 +26,8 @@ def find_model(
     transformer = BiasTransformer()
     transformer.fit(df)
     residuals = transformer.transform(df)
-
-    # TODO: Remove those. They can be retrieved when needed
-    user_bias = transformer.user_bias
-    item_bias = transformer.item_bias
     
-    (item_df, user_df) = find_dimensions(residuals, user_bias, item_bias, num_components)
-    print(residuals.head())
+    (item_df, user_df) = find_dimensions(residuals, num_components)
     # Note: run explore_results(movies_df) to explore item dimensions
 
     _ = cf_model(residuals, item_df, user_df, num_components)
@@ -40,7 +35,6 @@ def find_model(
     # However the test data doesn't have the dimensions or the biases yet.
 
 def cf_model(residuals, item_df, user_df, num_components):
-    # Clean data
     # TODO: This function should receive clean data instead of cleaning it up here.
     df = residuals \
         .drop(["user_bias", "item_bias"], axis=1) \

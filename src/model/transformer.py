@@ -13,7 +13,6 @@ class BiasTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         result = _get_residuals_and_bias(X, n_iter=self._n_iter)
         (self.residuals, self.user_bias, self.item_bias) = result
-        print("NAS (self.residuals):", self.residuals.isna().sum())
         return self
 
     def transform(self, X):

@@ -5,8 +5,8 @@ import numpy as np
 
 # Run a truncatedSVD on ratings to identify main dimensions of movies.
 # return a movies dataframe merged with those dimensions as columns: dim_0, dim_1...
-def find_dimensions(ratings_df, users_df, movies_df, num_components):
-    (sparse_ratings, users_df, movies_df) = _get_sparse_ratings(ratings_df, users_df, movies_df)
+def find_dimensions(ratings_df, num_components):
+    (sparse_ratings, users_df, movies_df) = _get_sparse_ratings(ratings_df)
     (movies_df, users_df) = _reduce_dimensions(sparse_ratings, movies_df, users_df, num_components)
     movies_df = movies_df.drop(["movie_code"], axis=1)
     users_df = users_df.drop(["user_code"], axis=1)
@@ -43,16 +43,17 @@ def _reduce_dimensions(sparse_ratings, item_bias, user_bias, num_components):
 # Output: (sparse_ratings, users_df, movies_df)
 # where users_df has received a user_code column,
 # and movies_df has received a movie_code column.
-def _get_sparse_ratings(ratings_df, users_df, movies_df):
-    users_df['user_code'] = users_df["userId"].astype("category").cat.codes
-    movies_df['movie_code'] = movies_df["movieId"].astype("category").cat.codes
-    ratings_df = ratings_df.merge(users_df, on="userId", how="left")
-    ratings_df = ratings_df.merge(movies_df, on="movieId", how="left")
+def _get_sparse_ratings(df):
+    df["user_code"] = df["userId"].astype("category").cat.codes
+    users_df = df[["userId", "user_code"]].groupby("userId").first()
+    users_df["userId"] = users_df.index
 
-    print(ratings_df.head())
+    df["movie_code"] = df["movieId"].astype("category").cat.codes
+    movies_df = df[["movieId", "movie_code"]].groupby("movieId").first()
+    movies_df["movieId"] = movies_df.index
 
     sparse_ratings = coo_matrix(
-        (ratings_df["residual"].astype(float), (ratings_df["movie_code"], ratings_df["user_code"])),
+        (df["residual"].astype(float), (df["movie_code"], df["user_code"])),
         shape=(len(movies_df), len(users_df))
     )
 
