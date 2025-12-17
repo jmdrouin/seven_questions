@@ -4,6 +4,9 @@ from transformer import BiasTransformer
 from matrix_factorization import find_dimensions
 import numpy as np
 from sklearn.preprocessing import FunctionTransformer
+from axes import explore_axes
+
+NUM_COMPONENTS = 10
 
 def main(
     test_size = None,
@@ -15,10 +18,10 @@ def main(
     train_df, test_df = split_data(top_ratings(), test_size=test_size)
 
     (warp, biasTransformer, model, dot) = find_model(train_df, num_components = num_components)
+    return
 
     t = biasTransformer.transform(warp.transform(test_df))
     t['dot'] = dot(t)
-
 
     t['bias'] = t['user_bias'] + t['item_bias'] + t['global_bias']
     t['pred_rating'] = t['bias']
@@ -43,7 +46,6 @@ def main(
         mae0 = mean_absolute_error(s["full_prediction"], s["rating"])
         mae1 = mean_absolute_error(s["rough_prediction"], s["rating"])
         print("MAE for", str(r), "stars:", mae0, "- rough:", mae1, "- diff", mae1 - mae0)
-    return
 
 def find_model(
     df,
@@ -84,7 +86,9 @@ def find_model(
     #plt.show()
 
     (item_df, user_df) = find_dimensions(residuals, num_components)
-    # Note: run explore_results(movies_df) to explore item dimensions
+    explore_axes(item_df)
+
+    return
 
     X = item_dot_user(residuals, item_df, user_df, num_components)
     y = residuals["residual"]
@@ -141,5 +145,5 @@ def get_linear_model(X, y):
 if __name__ == "__main__":
     main(
         test_size = 0.2,
-        num_components = 30
+        num_components = NUM_COMPONENTS
     )

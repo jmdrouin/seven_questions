@@ -19,6 +19,14 @@ def _reduce_dimensions(sparse_ratings, item_bias, user_bias, num_components):
     movie_embeddings = svd.fit_transform(sparse_ratings)
     user_factors = svd.components_.T
 
+    # Varimax rotation:
+    from factor_analyzer.rotator import Rotator
+    rotator = Rotator(method="varimax")
+    rotated_movie_embeddings = rotator.fit_transform(movie_embeddings)
+    rotated_user_factors = user_factors @ rotator.rotation_
+    movie_embeddings = rotated_movie_embeddings
+    user_factors = rotated_user_factors
+
     # Merge back user dims
     user_embeddings_df = pd.DataFrame(
         user_factors,

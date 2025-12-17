@@ -15,7 +15,7 @@ def _read_or_create(csv_file, make_dataframe):
 def top_ratings():
     def make_top_ratings_dataframe():
         # Dataframe restricted to the top 10K users and top 10K movies
-        top_movies = _read_or_create("shared_data/top_movies.csv", make_top_movies_dataframe)
+        top_movies = top_movies()
 
         ratings_df = pd.read_csv('data/ml-32m/ratings.csv')
         top_ratings = ratings_df[ratings_df["movieId"].isin(top_movies["movieId"])]
@@ -28,6 +28,9 @@ def top_ratings():
         return top_ratings
     
     return _read_or_create("data/custom/top_ratings.csv", make_top_ratings_dataframe)
+
+def top_movies():
+    return _read_or_create("shared_data/top_movies.csv", make_top_movies_dataframe)
 
 def make_top_movies_dataframe():
     df = pd.read_csv('data/custom/imdb.csv')
