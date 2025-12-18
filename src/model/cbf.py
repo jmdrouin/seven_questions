@@ -96,6 +96,9 @@ def movies_df():
     #plt.show()
 
     df = transform(df)
+
+    print(df.head())
+
     return df
 
 def transform(df):
