@@ -18,7 +18,6 @@ def main(
     train_df, test_df = split_data(top_ratings(), test_size=test_size)
 
     (warp, biasTransformer, model, dot) = find_model(train_df, num_components = num_components)
-    return
 
     t = biasTransformer.transform(warp.transform(test_df))
     t['dot'] = dot(t)
@@ -87,8 +86,6 @@ def find_model(
 
     (item_df, user_df) = find_dimensions(residuals, num_components)
     explore_axes(item_df)
-
-    return
 
     X = item_dot_user(residuals, item_df, user_df, num_components)
     y = residuals["residual"]

@@ -9,22 +9,16 @@ def explore_axes(movies_df):
     full_movies_df = full_movies_df.merge(movies_df, on="movieId")
 
     explore_tags(full_movies_df)
-    return
-
-    print("COLUMNS:", full_movies_df.columns)
     genres_dummies = full_movies_df["genres"].str.get_dummies(sep="|")
     movies_with_genres = pd.concat([full_movies_df, genres_dummies], axis=1)
 
     pg_dummies = full_movies_df["Rated"].str.get_dummies()
     movies_with_genres = pd.concat([movies_with_genres, pg_dummies], axis=1)
 
-    print(movies_with_genres)
-
     genre_cols = list(genres_dummies.columns)# + list(pg_dummies.columns)
-
     cols = genre_cols + dim_cols
     corr = movies_with_genres[cols].corr(numeric_only=True)
-    print("CORR")
+    print("CORRELATION between genres and dimensions")
     subcorr = corr.loc[genre_cols][dim_cols]
     print(subcorr)
 
@@ -133,9 +127,10 @@ def explore_tags(df):
     for genre in genres:
         tdf = add_row(tdf, "genre:"+genre, df["genres"].str.contains(genre))
 
-    tags = pd.read_csv('data/ml-32m/tags.csv')
-    for tag, ids in tags.groupby('tag')['movieId']:
-        tdf = add_row(tdf, tag, df["movieId"].isin(ids))
+    # Processing all tags takes too long
+    #tags = pd.read_csv('data/ml-32m/tags.csv')
+    #for tag, ids in tags.groupby('tag')['movieId']:
+    #    tdf = add_row(tdf, tag, df["movieId"].isin(ids))
 
     top = tdf.sort_values(by="count").tail(100)
 
@@ -153,9 +148,3 @@ def explore_tags(df):
         xaxis_title=""
     )
     fig.write_html("heatmap.html")
-
-    print("\n\n========END============")
-
-    #tags = {
-    #    ""
-    #}

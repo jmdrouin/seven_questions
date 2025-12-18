@@ -20,6 +20,7 @@ def main():
     mdf["score"] = rec
     mdf = mdf.merge(top_movies(), on="movieId")[["Title", "movieId", "score"]]
 
+    section("Recommended films (unfiltered) for userid " + str(userId))
     print(mdf.sort_values(by="score").tail(10))
 
     return
@@ -37,24 +38,13 @@ def build_user_profile(user_id, rdf, mdf, mu=3.0):
     df_w = df.mul(df["weight"], axis=0) / total_weight
     df_w = df_w.sum()
     df_w = df_w.drop(["weight"])
-    print("DFW")
-    print(df_w)
     return df_w
 
 def recommend(user_id, rdf, mdf, K=10):
     profile = build_user_profile(user_id, rdf, mdf, mu=3.0)
     if profile is None: return []
-
-    print("COS")
-    #mdf = mdf.drop(["userId", "movieId", "rating", "timestamp", "weight"], axis=1)
-
-    #print(mdf)
     profile = profile.reindex(mdf.columns).to_numpy().reshape(1, -1)
-    print(profile)
-
     scores = cosine_similarity(mdf, profile).ravel()
-    print("SCORES")
-    print(scores)
     return scores
 
 def movies_df():
@@ -63,11 +53,6 @@ def movies_df():
        'Awards', 'BoxOffice', 'Metascore', 'imdbRating', 'imdbVotes',
        'tomatoScore', 'genres']
     df = top_movies()[relevant_cols].set_index("movieId")
-    #print(df.head())
-
-    # Remove short films?
-    #df = df[df["Runtime"] > 40]
-
     df = df.drop(["Title", "Director", "Writer", "Actors", "BoxOffice", "imdbVotes"], axis=1)
 
     df = encode_ratings(df, verbose=False)
@@ -96,13 +81,9 @@ def movies_df():
     #plt.show()
 
     df = transform(df)
-
-    print(df.head())
-
     return df
 
 def transform(df):
-
     from sklearn.preprocessing import StandardScaler
     rscaler = StandardScaler()
     rcols = ['Runtime', 'Metascore', 'imdbRating', 'tomatoScore', "age_years"]
@@ -144,11 +125,6 @@ def encode_first(df, col, prefix):
     return encode_list(df, col, prefix, min_size=50)
 
 def encode_list(df, col, prefix, min_size=100):
-    section("Encoding " + col + "...")
-
-    #counts = df[col].str.split("|").explode().value_counts()
-    #small_values = counts[counts < min_size].index.tolist()
-
     encoded = df[col].str.get_dummies(sep="|").add_prefix(prefix)
     df = df.drop([col], axis=1)
     encoded = encoded.loc[:, encoded.sum(axis=0) >= min_size]
