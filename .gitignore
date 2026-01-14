@@ -3,6 +3,7 @@ data/*/*
 
 # Don't include tmp folder
 tmp/*
+streamlit_exercise/*
 
 # Private api keys
 */omdb_key.py

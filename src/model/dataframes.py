@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 
+N_MOVIES = 5000
+
 def _read_or_create(csv_file, make_dataframe):
     """Load dataframe from csv_file if it exists. Otherwise, create it by calling make_dataframe()."""
     if os.path.exists(csv_file):
@@ -12,25 +14,25 @@ def _read_or_create(csv_file, make_dataframe):
     print("Database created:", csv_file)
     return df
 
+def top_movies():
+    return _read_or_create("shared_data/top_movies.csv", make_top_movies_dataframe)
+
 def top_ratings():
     def make_top_ratings_dataframe():
         # Dataframe restricted to the top 10K users and top 10K movies
-        top_movies = top_movies()
+        top_movies_ = top_movies()
 
         ratings_df = pd.read_csv('data/ml-32m/ratings.csv')
-        top_ratings = ratings_df[ratings_df["movieId"].isin(top_movies["movieId"])]
+        top_ratings = ratings_df[ratings_df["movieId"].isin(top_movies_["movieId"])]
         print("All ratings:", len(ratings_df), "-- Ratings of top movies:", len(top_ratings))
 
-        counts = top_ratings['userId'].value_counts()
-        top_users = counts.head(1000).index
-        top_ratings = top_ratings[top_ratings['userId'].isin(top_users)]
+        #counts = top_ratings['userId'].value_counts()
+        #top_users = counts.head(1000).index
+        #top_ratings = top_ratings[top_ratings['userId'].isin(top_users)]
 
         return top_ratings
     
     return _read_or_create("data/custom/top_ratings.csv", make_top_ratings_dataframe)
-
-def top_movies():
-    return _read_or_create("shared_data/top_movies.csv", make_top_movies_dataframe)
 
 def make_top_movies_dataframe():
     df = pd.read_csv('data/custom/imdb.csv')
