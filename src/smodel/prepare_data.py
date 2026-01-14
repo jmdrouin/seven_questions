@@ -101,11 +101,23 @@ if __name__ == "__main__":
         shuffle=True
     )
 
+    # Prepare a smaller set of data for quicker tests
+    _, small_users = train_test_split(
+        users,
+        test_size=0.1,
+        random_state=100,
+        shuffle=True
+    )
+
     cold_test_ratings = df[["userId","movieId","rating","timestamp"]][df["userId"].isin(cold_test_users.index)]
     normal_ratings = df[["userId","movieId","rating","timestamp"]][df["userId"].isin(normal_users.index)]
+    small_ratings = df[["userId","movieId","rating","timestamp"]][df["userId"].isin(small_users.index)]
 
-    print("Writing shared_data/ratings_cold_users.csv... size=", len(cold_test_ratings))
-    cold_test_ratings.to_csv("shared_data/ratings_cold_users.csv", index=False)
+    print("Writing data/ratings_cold_users.csv... size=", len(cold_test_ratings))
+    cold_test_ratings.to_csv("data/ratings_cold_users.csv", index=False)
 
-    print("Writing shared_data/ratings_normal_users.csv... size=", len(normal_ratings))
-    normal_ratings.to_csv("shared_data/ratings_normal_users.csv", index=False)
+    print("Writing data/ratings_normal_users_small.csv... size=", len(small_ratings))
+    small_ratings.to_csv("data/ratings_normal_users_small.csv", index=False)
+
+    print("Writing data/ratings_normal_users.csv... size=", len(normal_ratings))
+    normal_ratings.to_csv("data/ratings_normal_users.csv", index=False)
