@@ -3,7 +3,7 @@ import src.app.pages as st_pages
 
 st.title("Questions and Recommendations")
 st.sidebar.title("Table of contents")
-pages = ["The Problem", "Data", "TODO"]
+pages = ["The Problem", "Data", "Demo"]
 page = st.sidebar.radio("Go to", pages)
 
 if page == pages[0]:
@@ -13,7 +13,4 @@ if page == pages[1]:
     st_pages.data()
 
 if page == pages[2]:
-    st.write("## TODO")
-    st.write("""
-        - Thing
-    """)
+    st_pages.demo()
