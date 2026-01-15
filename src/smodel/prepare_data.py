@@ -92,7 +92,7 @@ if __name__ == "__main__":
             "ratings above and below their average"
         )
     
-    min_divergence = 15
+    min_divergence = 25
     from sklearn.model_selection import train_test_split        
     normal_users, cold_test_users = train_test_split(
         users,
