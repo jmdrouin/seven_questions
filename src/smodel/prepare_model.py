@@ -46,14 +46,17 @@ def datasets(full=True):
 
 def item_factors_df(algo, trainset):
     q = algo.qi
+    b = algo.bi
     factors = []
     for inner_iid in range(trainset.n_items):
         raw_iid = trainset.to_raw_iid(inner_iid)
         vec = q[inner_iid]
-        factors.append([raw_iid] + list(vec))
+        bias = b[inner_iid]
+        factors.append([raw_iid, bias] + list(vec))
 
-    cols = ["q" + str(i) for i in range(len(factors[0]) - 1)]
-    return pd.DataFrame(factors, columns=["movieId"] + cols)
+    num_q_cols = len(factors[0]) - 2
+    q_cols = ["q" + str(i) for i in range(num_q_cols)]
+    return pd.DataFrame(factors, columns=["movieId", "bias"] + q_cols)
 
 def user_factors_df(algo, trainset):
     p = algo.pu
