@@ -2,6 +2,13 @@ import streamlit as st
 from src.smodel import model as Model
 import plotly.express as px
 from src.smodel import analyze_axes as Axes
+from src.app import figures
+import numpy as np
+
+@st.cache_resource
+def users_df():
+    bundle = Model.demo_bundle()
+    return bundle['users']
 
 @st.cache_resource
 def movies_df():
@@ -31,7 +38,6 @@ def control_panel(labels_left, labels_right):
     return values
 
 def recommendations(values):
-    st.write(values)
     df = Model.recommend_items(values, movies_df())
     st.dataframe(df.head(20))
 
@@ -52,10 +58,25 @@ def demo():
         candidates = typical_movies(idf, dim, -1)
         labels_left.append(candidates["Title"].values)
 
-    values = control_panel(labels_left, labels_right)
+    raw_values = control_panel(labels_left, labels_right)
+
+    udf = users_df()
+    values = []
+    increment = 0.1
+    for i in range(len(raw_values)):
+        dim = "p" + str(i)
+        percentile = (raw_values[i] + 1 + 0.5 * increment) / (2 + increment)
+        mu = udf[dim].mean()
+        sigma = udf[dim].std()
+        st.write(mu, sigma, percentile)
+        from scipy.stats import norm
+        value = norm.ppf(percentile, mu, sigma)
+        values.append(value)
 
     st.write("#### Recommendations:")
-    recommendations(values)
+    st.write(values)
+
+    recommendations(raw_values)
 
 def explore_dim(idf, dims, k):
     dim = dims[k]
@@ -79,29 +100,39 @@ def explore_dim(idf, dims, k):
     st.write("### TYPICAL FILMS (DOWN)")
     st.dataframe(typical_movies(idf, dim, -1))
 
-    fig = px.scatter(
-        idf,
-        x=dim,
-        y="bias",
-        hover_name="Title"
-    )
-    fig.update_yaxes(visible=False)
-    fig.update_layout(
-        title=dim,
-        height=400,
-    )
-    
+    fig = figures.movie_scatter(idf, x=dim, title=dim)
     st.plotly_chart(fig)
-
 
 def movies():
     st.write("### Movies")
-
     idf = movies_df()
     dims = [c for c in idf.columns if c.startswith("q")]
     for k in range(len(dims)):
         explore_dim(idf, dims, k)
 
+def explore_user_dim(df, dims, k):
+    dim = dims[k]
+
+    fig = px.histogram(df, dim)
+    #precision = 0.1
+    #mu = df[dim].mean()
+    #sigma = df[dim].std
+    #from scipy.stats import norm
+    #p50 = norm.ppf(0.50, mu, sigma)  # == mu
+
+    for i in [5, 25, 50, 75, 95]:
+        x = np.percentile(df["p3"], i)
+        text = str(i)+"%\nx=" + str(round(x, 2))
+        fig.add_vline(x=x, line_dash="solid", line_color="red", annotation_text=text)
+    st.plotly_chart(fig)
+
+def users():
+    st.write("### Users")
+    udf = users_df()
+    dims = [c for c in udf.columns if c.startswith("p")]
+    for k in range(len(dims)):
+        st.write("### Dimension " + dims[k])
+        explore_user_dim(udf, dims, k)
 
 def problem():
     st.write("### The Problem")
