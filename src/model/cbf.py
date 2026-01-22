@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from dataframes import top_movies
 from sklearn.metrics.pairwise import cosine_similarity
+from movie_info import movie_info
 
 def section(name):
     print("\n====================================================")

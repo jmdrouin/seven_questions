@@ -1,3 +1,4 @@
+import plotly.express as px
 
 def movie_scatter(idf, x=None, title=None):
     fig = px.scatter(
