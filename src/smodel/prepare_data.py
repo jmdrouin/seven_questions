@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 N_MOVIES = 10000
 
@@ -56,7 +57,8 @@ def make_top_movies_dataframe():
     print(combined_df.head())
     return combined_df
 
-if __name__ == "__main__":
+
+def main():
     # Select users that have at least some good and bad ratings,
     # Save those ratings for building the model
     
@@ -84,7 +86,7 @@ if __name__ == "__main__":
     users["divergent_ratings"] = users[["below_avg_count", "above_avg_count"]].min(axis=1)
 
     n_users = len(users)
-    for k in [0,1,5,10,20]:
+    for k in [0,1,5,10,20,25]:
         print(
             len(users[ users["divergent_ratings"] > k ]),
             "users have at least",
@@ -92,32 +94,58 @@ if __name__ == "__main__":
             "ratings above and below their average"
         )
     
-    min_divergence = 25
-    from sklearn.model_selection import train_test_split        
-    normal_users, cold_test_users = train_test_split(
-        users,
-        test_size=0.1,
-        random_state=100,
-        shuffle=True
-    )
+    users_100k = users \
+        .sort_values("divergent_ratings", ascending=False) \
+        .head(100000)
+    
+    ratings_100k_users = df \
+        [ df["userId"].isin(users_100k.index) ] \
+        .rename({"movieId": "itemId"}, axis=1) \
+        [ ["userId", "itemId", "rating"] ]
+    
+    print("Number of ratings:", len(ratings_100k_users))
+    print("Number of users:", len(users_100k))
+    print(users_100k.tail())
+    # Each user has at least 28 divergent ratings
+    # and an average of 267 ratings.
+    # Taking 27 ratings per user for testing
+    # means around 10% test data.
 
-    # Prepare a smaller set of data for quicker tests
-    _, small_users = train_test_split(
-        users,
-        test_size=0.1,
-        random_state=100,
-        shuffle=True
-    )
+    # Smaller set for faster computation (using mid-sized users)
+    users_20k = users \
+        .sort_values("divergent_ratings", ascending=False) \
+        .head(50000) \
+        .tail(20000)
+    ratings_20k_users = df \
+        [ df["userId"].isin(users_20k.index) ] \
+        .rename({"movieId": "itemId"}, axis=1) \
+        [ ["userId", "itemId", "rating"] ]
 
-    cold_test_ratings = df[["userId","movieId","rating","timestamp"]][df["userId"].isin(cold_test_users.index)]
-    normal_ratings = df[["userId","movieId","rating","timestamp"]][df["userId"].isin(normal_users.index)]
-    small_ratings = df[["userId","movieId","rating","timestamp"]][df["userId"].isin(small_users.index)]
 
-    print("Writing data/ratings_cold_users.csv... size=", len(cold_test_ratings))
-    cold_test_ratings.to_csv("data/ratings_cold_users.csv", index=False)
+    ratings_100k_test = ratings_100k_users \
+        .groupby("userId", group_keys=False) \
+        .sample(n=27, random_state=100)
+    ratings_100k_train = ratings_100k_users \
+        .drop(ratings_100k_test.index)
 
-    print("Writing data/ratings_normal_users_small.csv... size=", len(small_ratings))
-    small_ratings.to_csv("data/ratings_normal_users_small.csv", index=False)
+    ratings_20k_test = ratings_20k_users \
+        .groupby("userId", group_keys=False) \
+        .sample(n=27, random_state=100)
+    ratings_20k_train = ratings_20k_users \
+        .drop(ratings_20k_test.index)
 
-    print("Writing data/ratings_normal_users.csv... size=", len(normal_ratings))
-    normal_ratings.to_csv("data/ratings_normal_users.csv", index=False)
+    print("Writing data/ratings_100k_users_train.csv... size=", len(ratings_100k_train))
+    ratings_100k_train.to_csv("data/ratings_100k_users_train.csv", index=False)
+
+    print("Writing data/ratings_100k_users_test.csv... size=", len(ratings_100k_test))
+    ratings_100k_test.to_csv("data/ratings_100k_users_test.csv", index=False)
+
+    print("Writing data/ratings_20k_users_train.csv... size=", len(ratings_20k_train))
+    ratings_20k_train.to_csv("data/ratings_20k_users_train.csv", index=False)
+
+    print("Writing data/ratings_20k_users_test.csv... size=", len(ratings_20k_test))
+    ratings_20k_test.to_csv("data/ratings_20k_users_test.csv", index=False)
+
+
+if __name__ == "__main__":
+    main()

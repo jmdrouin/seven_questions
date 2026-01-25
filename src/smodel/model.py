@@ -59,6 +59,7 @@ def recommend_items(p: list[float], df: pd.DataFrame):
     return sorted[dims + ['Title', 'pq_score', 'rec_score', 'bias']]
 
 def demo_bundle():
-    with open("models/demo_svd.pkl", "rb") as f:
+    with open("models/demo_svd_pca.pkl", "rb") as f:
+    #with open("models/demo_svd.pkl", "rb") as f:
         bundle = pickle.load(f)
     return bundle

@@ -4,6 +4,7 @@ import plotly.express as px
 from src.smodel import analyze_axes as Axes
 from src.app import figures
 import numpy as np
+import re
 
 @st.cache_resource
 def users_df():
@@ -184,8 +185,6 @@ def data():
 
     st.write("#### ml-32m: explicit ratings")
 
-    st.dataframe()
-
     mdf = movies_df()#[dims + [d + "_std" for d in dims]]
 
     # TODO: Oops. Columns were duplicated during the merge
@@ -210,5 +209,129 @@ def data():
     # dims = ['Runtime', 'tomatoScore', 'age_years']
     st.dataframe(mdf.head()[['tomatoScore']])
 
+def model():
+    import pandas as pd
+    df = pd.read_json("explore_models_results.txt", lines=True)
+    for col in ["e", "f", "pca", "lr", "reg"]:
+        df[col] = df["algo"].str.extract(fr"{re.escape(col)}=([0-9]*\.?[0-9]+)").astype(float)
+    df["t"] = df["algo"].str.extract(fr"t=(.*)")
+
+    f_results = df[df["lr"].isna() & ~df["f"].isna() & df["pca"].isna() & df["t"].isna()]
+
+    st.write("# Number of latent factors")
+    metric = st.selectbox("metric", ["rmse_mean", "fcp_mean", "ndcg_at_10_mean"], index=0)
+
+    fig = px.scatter(
+        f_results,
+        x="f",
+        y=metric,
+        hover_name="algo"
+    )
+
+    random_value = df[df["algo"]=="random"][metric].values[0]
+    baseline_value = df[df["algo"]=="baseline"][metric].values[0]
+    ideal_value = 1.0
+    if metric is "rmse_mean": ideal_value = 0.0
+
+    show_baseline = st.checkbox("Show baseline", value=False)
+    show_ideal = st.checkbox("Show ideal value", value=False)
+    show_random = st.checkbox("Show random baseline", value=False)
+
+    if show_random:
+        fig.add_hline(
+            y=random_value,
+            line_color="red",
+            line_dash="dash",
+            annotation_text="random",
+            annotation_position="top left",
+        )
+
+    if show_baseline:
+        fig.add_hline(
+            y=baseline_value,
+            line_color="red",
+            line_dash="dash",
+            annotation_text="baseline",
+            annotation_position="top left",
+        )
+    
+    if show_ideal:
+        fig.add_hline(
+            y=ideal_value,
+            line_color="green",
+            line_dash="dash",
+            annotation_text="ideal value",
+            annotation_position="top left",
+        )
+
+    fig.update_layout(
+        xaxis_title="Number of latent factors (f)",
+        yaxis_title=metric,
+    )
+    
+
+    st.plotly_chart(fig)
+
+    f50_results = df[~df["lr"].isna()]
+
+    x_axis = st.selectbox("x_axis", ["e", "lr", "reg"], index=2)
+
+    fig = px.scatter(
+        f50_results,
+        x=x_axis,
+        y=metric,
+        hover_name="algo"
+    )
+    fig.update_layout(
+        xaxis_title=x_axis,
+        yaxis_title=metric,
+    )
+
+    st.plotly_chart(fig)
 
 
+
+    pca_results = df[~df["pca"].isna()]
+    st.dataframe(pca_results)
+
+    fig = px.scatter(
+        pca_results,
+        x="pca",
+        y=metric,
+        hover_name="algo"
+    )
+    fig.update_layout(
+        xaxis_title="pca",
+        yaxis_title=metric,
+    )
+
+    st.write("## Effect of PCA")
+
+    if show_random:
+        fig.add_hline(
+            y=random_value,
+            line_color="red",
+            line_dash="dash",
+            annotation_text="random",
+            annotation_position="top left",
+        )
+
+    if show_baseline:
+        fig.add_hline(
+            y=baseline_value,
+            line_color="red",
+            line_dash="dash",
+            annotation_text="baseline",
+            annotation_position="top left",
+        )
+    
+    if show_ideal:
+        fig.add_hline(
+            y=ideal_value,
+            line_color="green",
+            line_dash="dash",
+            annotation_text="ideal value",
+            annotation_position="top left",
+        )
+
+    st.plotly_chart(fig)

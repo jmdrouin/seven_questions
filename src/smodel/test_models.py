@@ -22,14 +22,26 @@ def cloglog(df, lower_bound=0, upper_bound=6):
 def predictor(model):
     return lambda r: model.predict(r["userId"], r["itemId"]).est
 
-def main():
-    source_df = pd \
+def get_split_data():
+    df = pd \
         .read_csv("data/ratings_normal_users_small.csv") \
         .drop("timestamp", axis=1) \
-        .rename({"movieId": "itemId"}, axis=1)
-    source_df["rating_cloglog"] = cloglog(source_df)
+        .rename({"movieId": "itemId"}, axis=1) \
+        [["userId", "itemId", "rating"]]
     
-    df = source_df[["userId", "itemId", "rating"]]
+    n = len(df)
+
+    df_sampled = df \
+        .groupby("userId", group_keys=False) \
+        .sample(n=1, random_state=100)
+
+    return df_sampled
+
+def main():
+    df = get_split_data()
+    print(df.head())
+    return
+
 
     df_train, df_test = train_test_split(df, test_size=0.25, random_state=100)
     reader = Reader(rating_scale=(0.5, 5))

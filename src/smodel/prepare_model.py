@@ -58,14 +58,15 @@ def item_factors_df(algo, trainset):
 
 def user_factors_df(algo, trainset):
     p = algo.pu
-    b = algo.bi
+    b = algo.bu
     factors = []
     for inner_uid in range(trainset.n_users):
         raw_uid = trainset.to_raw_uid(inner_uid)
         vec = p[inner_uid]
+        bias = b[inner_uid]
         factors.append([raw_uid, bias] + list(vec))
 
-    num_p_cols = len(factors[0] - 2)
+    num_p_cols = len(factors[0]) - 2
     p_cols = ["p" + str(i) for i in range(num_p_cols)]
     return pd.DataFrame(factors, columns=["userId", "bias"] + p_cols)
 
