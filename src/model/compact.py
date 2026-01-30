@@ -13,7 +13,7 @@ for i in range(500):
     core_movies.append(top_movie)
     good_users = ratings[ratings["movieId"]==top_movie]["userId"].unique()
     ratings = ratings[ratings["userId"].isin(good_users) & ~ratings["movieId"].isin(core_movies)]
-    print("Num ratings:", len(ratings), "Num users:", len(good_users), "Num movies:", len(core_movies))
+    print("Num ratings:", len(ratings), "Num users:", len(good_users), "Num movies:", len(core_movies), "Score:", len(good_users)*len(core_movies))
     if prev_num_users==len(good_users):
         break
     prev_num_users = len(good_users)

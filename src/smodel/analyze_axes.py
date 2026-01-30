@@ -1,5 +1,6 @@
 from src.smodel import model as M
 import numpy as np
+import pandas as pd
 
 from sklearn.cluster import KMeans
 
@@ -12,7 +13,7 @@ def find_clusters(df, dims, n_clusters):
 
 def find_representatives(idf, dims, dim, sign, n_reps):
     other_dims = [d for d in dims if d != dim]
-    bias_weight = 0.5
+    bias_weight = 0.25
     idf['score'] = sign * idf[dim] + bias_weight * idf["bias"]
     candidates = idf \
         .sort_values(by="score", ascending=False) \
@@ -25,70 +26,43 @@ def find_representatives(idf, dims, dim, sign, n_reps):
         .loc[clusters.groupby("cluster")["score"].idxmax()] \
         .sort_values(by="score", ascending=False)
 
-def main():
-    bundle = M.demo_bundle()
-    idf = M.movies_df(bundle["items"])
-    dims = [c for c in idf.columns if c.startswith("q")]
+def tag_correlations_df(idf):
+    df = M.movies_df(idf)
+    dims = [c for c in df.columns if c.startswith("q")]
 
-    for dim in dims:
-        for sign in [-1,1]:
-            print("")
-            print("--------", str(sign), str(dim), "----------")
-            r = find_representatives(idf, dims, dim, sign, n_reps=4)
-            print(r)
+    rows = []
 
-    #for dim in dims:
-    #    print()
-    #    print("ORDER BY", dim)
-    #    print(candidates.sort_values(by=dim))
+    total_votes = float(df["imdbVotes"].sum())
+    print("total votes:", total_votes)
 
-    #qs = [q for q in dims if not q == dim]
-    #y = candidates[qs].iloc[0].to_numpy()
-    #worst_dim = 
+    for type in ["Genre", "Director", "Actors", "Language", "Country", "Writer"]:
+        print("--", type)
+        values = list(df[type].str.split("|").explode().dropna().unique())
+        for value in values:
+            mask = df[type].str.contains(value, regex=False, na=False)
+            has_tag = mask.astype(int)
 
-    #idf['dist_to_0'] = np.linalg.norm(idf[qs] - y, axis=1)
+            votes = df[mask]["imdbVotes"].sum() / total_votes
+            if votes < 0.01: continue
+            rows.append({
+                "type": type,
+                "value": value,
+                "size": has_tag.mean(),
+                "popularity": votes,                
+                **df[dims].corrwith(has_tag).to_dict()
+            })
 
-    #idf['new_score'] = 10 * idf['score'] + idf['dist_to_0']
+    for type in ["age_years", "BoxOffice", "tomatoScore", "imdbVotes", "imdbRating"]:
+        print("--", type)
+        rows.append({
+            "type": "value",
+            "value": type,
+            "size": 1,
+            "popularity": 1,
+            **df[dims].corrwith(df[type]).to_dict()
+        })
 
-    #print(idf.sort_values(by="new_score", ascending=False).head()[dims + ['Title', 'dist_to_0', 'score']])
-
-
-
-    return
-    dims = [c for c in idf.columns if c.startswith("q")]
-    for k in range(len(dims)):
-        explore_dim(idf, dims, k)
-
-    dim = dims[k]
-    st.write("### Dimension " + str(k))
-
-    idf["up"] = idf[dim] + idf["bias"]
-    idf["down"] = -idf[dim] + idf["bias"]
-
-    st.dataframe(idf \
-            .sort_values(by="up", ascending=False)[["Title", dims[k], "bias"]] \
-            .head()
-    )
-        
-    st.dataframe(idf \
-            .sort_values(by="down", ascending=False)[["Title", dims[k], "bias"]] \
-            .head()
-    )
-    
-    fig = px.scatter(
-        idf,
-        x=dim,
-        y="bias",
-        hover_name="Title"
-    )
-    fig.update_yaxes(visible=False)
-    fig.update_layout(
-        title=dim,
-        height=400,
-    )
-    
-    st.plotly_chart(fig)
-
+    return pd.DataFrame(rows)
 
 if __name__ == "__main__":
-    main()
+    print("No script.")

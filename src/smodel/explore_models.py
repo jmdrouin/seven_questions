@@ -6,9 +6,8 @@ import numpy as np
 import pickle
 from sklearn.metrics import ndcg_score, root_mean_squared_error
 from collections import defaultdict
-import pca
+from src.smodel import pca, prepare_model, analyze_axes
 from datetime import datetime
-import prepare_model
 import json
 
 def ndcg(preds, k=10, score_transform=None):
@@ -186,6 +185,8 @@ def make_demo_model():
     svd.fit(trainset)
     algo = pca.PcaSvd(svd, n_components=7)
 
+
+    idf = prepare_model.item_factors_df(algo, trainset)
     artifact = {
         #"model": algo,
         "trainset": trainset,
@@ -193,7 +194,8 @@ def make_demo_model():
         "dataset": "ratings_normal_users_small",
         "notes": "SVD(n_factors=50, n_epochs = 20, pca = 7)",
         "users": prepare_model.user_factors_df(algo, trainset),
-        "items": prepare_model.item_factors_df(algo, trainset)
+        "items": idf,
+        "axes": analyze_axes.tag_correlations_df(idf)
     }
 
     with open("models/demo_svd_pca.pkl", "wb") as f:

@@ -1,25 +1,43 @@
 import streamlit as st
 import src.app.pages as st_pages
+import src.app.data as data
 
-st.title("Questions and Recommendations")
-st.sidebar.title("Table of contents")
-pages = ["The Problem", "Data", "Model", "Movies", "Users", "Demo"]
-page = st.sidebar.radio("Go to", pages)
+#st.title("Questions and Recommendations")
+st.sidebar.title("Seven Questions")
 
-if page == pages[0]:
-    st_pages.problem()
+st.markdown("""
+    <style>
+    /* Increase base font size */
+    html, body, [class*="css"]  {
+        font-size: 20px;
+    }
 
-if page == pages[1]:
-    st_pages.data()
+    /* Headers */
+    h1 { font-size: 3rem; }
+    h2 { font-size: 2.2rem; }
+    h3 { font-size: 1.8rem; }
 
-if page == pages[2]:
-    st_pages.model()
+    /* Tables */
+    thead tr th {
+        font-size: 1.2rem;
+    }
+    tbody tr td {
+        font-size: 1.1rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-if page == pages[3]:
-    st_pages.movies()
+pages = {
+    "Introduction": st_pages.introduction,
+    "Exploration of data": data.data,
+    "Preprocessing the data set": st_pages.preprocessing,
+    "Model": st_pages.model_1,
+    "Optimization": st_pages.model_2,
+    "Dimensions": st_pages.model_3,
+    "Movies": st_pages.movies,
+    "Users": st_pages.users,
+    "Demo": st_pages.demo
+}
 
-if page == pages[4]:
-    st_pages.users()
-
-if page == pages[5]:
-    st_pages.demo()
+page = st.sidebar.radio("Go to", pages.keys())
+pages[page]()
