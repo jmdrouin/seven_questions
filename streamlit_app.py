@@ -38,12 +38,10 @@ st.markdown("""
 pages = {
     "Introduction": st_pages.introduction,
     "Data": data.data,
-    #"Preprocessing the data set": st_pages.preprocessing,
     "Model": st_pages.model_1,
     "Optimization": st_pages.model_2,
     "Reducing Dimensions": st_pages.model_3,
     "Seven Questions": st_pages.movies,
-    #"Users": st_pages.users,
     "Demo": st_pages.demo,
     "Next Steps": st_pages.conclusion
 }

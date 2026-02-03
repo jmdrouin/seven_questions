@@ -1,0 +1,46 @@
+\documentclass[11pt]{article}
+
+\usepackage{fontspec}
+\setmainfont{EB Garamond}
+
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue
+}
+
+\usepackage{float}
+
+% Pandoc fix for tight lists
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% Pandoc 3.x helper (used for images/figures)
+\providecommand{\pandocbounded}[1]{#1}
+
+\begin{document}
+
+$if(title)$
+{\LARGE\bfseries $title$ \par}
+\vspace{0.5em}
+$endif$
+
+$if(author)$
+{\large $author$ \par}
+$endif$
+
+$if(date)$
+{\small $date$ \par}
+\vspace{1.5em}
+$endif$
+
+$body$
+
+\end{document}
