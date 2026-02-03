@@ -1,6 +1,5 @@
 from src.smodel import prepare_data
 import pandas as pd
-import numpy as np
 from sklearn.preprocessing import QuantileTransformer
 
 def encode_age(df):

@@ -52,19 +52,14 @@ def plot_presence(present: pd.DataFrame, title: str):
     return fig
 
 def density_plot():
-    # --- Usage in Streamlit ---
-    st.subheader("Ratings sparsity (missingness heatmaps)")
-
     df = pd.read_csv("top_1000ui_ratings.csv")
-
     WINDOW = 50
     max_n = 1000
     max_user_start = max(1, max_n - WINDOW + 1)
     max_movie_start = max(1, max_n - WINDOW + 1)
-    controls, chart = st.columns([1, 4])
+    chart, controls = st.columns([7, 2])
 
     with controls:
-        st.markdown("### Window picker")
         u_start = st.slider("User rank start", 1, max_user_start, 1, step=50)
         m_start = st.slider("Movie rank start", 1, max_movie_start, 1, step=50)
         st.caption(f"Window size: {WINDOW} × {WINDOW}")
@@ -105,7 +100,7 @@ def rating_distribution(num_items, col):
     return ratings
 
 def ratings_distribution_plot(group_col = "userId"):
-    ratings = rating_distribution(50, group_col)
+    ratings = rating_distribution(25, group_col)
     # Convert counts to percentages
     ratings_percent = ratings.copy()
     ratings_percent[stars] = ratings_percent[stars].div(
@@ -148,7 +143,7 @@ def ratings_distribution_plot(group_col = "userId"):
             showticklabels=False,   # hide meaningless numbers
             ticks=""
         ),
-        height=1000,
+        height=700,
         margin=dict(l=40, r=20, t=60, b=40),
     )
 

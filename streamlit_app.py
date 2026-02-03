@@ -2,9 +2,11 @@ import streamlit as st
 import src.app.pages as st_pages
 import src.app.data as data
 
+
 #st.title("Questions and Recommendations")
 st.sidebar.title("Seven Questions")
 
+st.set_page_config(layout="wide")
 st.markdown("""
     <style>
     /* Increase base font size */
@@ -24,19 +26,26 @@ st.markdown("""
     tbody tr td {
         font-size: 1.1rem;
     }
+    .big-table table {
+        font-size: 1.6rem;
+    }
+    .big-table th, .big-table td {
+        padding: 0.8rem 1.2rem;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 pages = {
     "Introduction": st_pages.introduction,
-    "Exploration of data": data.data,
-    "Preprocessing the data set": st_pages.preprocessing,
+    "Data": data.data,
+    #"Preprocessing the data set": st_pages.preprocessing,
     "Model": st_pages.model_1,
     "Optimization": st_pages.model_2,
-    "Dimensions": st_pages.model_3,
-    "Movies": st_pages.movies,
-    "Users": st_pages.users,
-    "Demo": st_pages.demo
+    "Reducing Dimensions": st_pages.model_3,
+    "Seven Questions": st_pages.movies,
+    #"Users": st_pages.users,
+    "Demo": st_pages.demo,
+    "Next Steps": st_pages.conclusion
 }
 
 page = st.sidebar.radio("Go to", pages.keys())

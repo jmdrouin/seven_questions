@@ -46,36 +46,6 @@ def inv_cloglog(y, lower_bound=0, upper_bound=5.5):
     return x
 
 def explore_models():
-    """
-    params = {
-        #"n_factors": [1, 2, 3, 5, 10, 20, 30, 50, 100],
-        "n_factors": [5, 10]
-        #"reg_bu": np.linspace(0.02, 0.2, 5),
-        #"reg_bi": np.linspace(0.02, 0.2, 5),
-        #"reg_pu": np.linspace(0.02, 0.2, 5),
-        #"reg_qi": np.linspace(0.02, 0.2, 5),
-        #"lr_bu": [0.002, 0.005, 0.01],
-        #"lr_bi": [0.002, 0.005, 0.01],
-        #"lr_pu": [0.002, 0.005, 0.01],
-        #"lr_qi": [0.002, 0.005, 0.01],
-        #"init_mean": np.linspace(-1, 1, 5),
-        #"init_std_dev": np.linspace(0.1, 1, 5),
-        "n_epochs": [20],
-    }
-
-    rs = GridSearchCV(
-        SVDpp,
-        params,
-        measures=["RMSE"],
-        n_iter=20,
-        cv=3,
-        random_state=100,
-        n_jobs=4,
-        joblib_verbose=4,
-        return_train_measures=True
-    )
-    """
-
     kf = KFold(n_splits=3, random_state=100, shuffle=True)
 
     transform = None #"cloglog"
@@ -198,7 +168,7 @@ def make_demo_model():
         "axes": analyze_axes.tag_correlations_df(idf)
     }
 
-    with open("models/demo_svd_pca.pkl", "wb") as f:
+    with open("models/demo_svd_pca_dump.pkl", "wb") as f:
         pickle.dump(artifact, f)
 
 if __name__ == "__main__":

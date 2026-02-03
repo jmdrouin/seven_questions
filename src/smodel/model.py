@@ -50,12 +50,11 @@ def explore_movies(idf):
 
     # Now let's recommend a movie...
 
-def recommend_items(p: list[float], df: pd.DataFrame):
+def recommend_items(p: list[float], bias_weight: float, df: pd.DataFrame):
     dims = ["q"+str(i) for i in range(len(p))]
     df["pq_score"] = df[dims].to_numpy() @ np.array(p)
-    df["rec_score"] = df["pq_score"] + df["bias"]
+    df["rec_score"] = df["pq_score"] + bias_weight * df["bias"]
     sorted = df.sort_values(by="rec_score", ascending=False)
-    
     return sorted[dims + ['Title', 'pq_score', 'rec_score', 'bias']]
 
 def demo_bundle():

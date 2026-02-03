@@ -37,9 +37,10 @@ def tag_correlations_df(idf):
 
     for type in ["Genre", "Director", "Actors", "Language", "Country", "Writer"]:
         print("--", type)
-        values = list(df[type].str.split("|").explode().dropna().unique())
+        values = list(df.head(500)[type].str.split("|").explode().dropna().unique())
         for value in values:
-            mask = df[type].str.contains(value, regex=False, na=False)
+            print(value)
+            mask = df[type].str.split("|").apply(lambda xs: value in xs if isinstance(xs, list) else False)
             has_tag = mask.astype(int)
 
             votes = df[mask]["imdbVotes"].sum() / total_votes
