@@ -6,7 +6,7 @@ import re
 from app.figures import problem_solution, section_title, big_divider, table, pill_box, phone_mockup
 import app.dataframes as dataframes
 from scipy.stats import norm
-import src.smodel.model as Model
+import src.model as Model
 
 def control_panel(labels_left, labels_right, compact=False):
     values = []

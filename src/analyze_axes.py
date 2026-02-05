@@ -1,6 +1,5 @@
-from src.smodel import model as M
 import pandas as pd
-
+from src.model import movies_df
 from sklearn.cluster import KMeans
 
 def find_clusters(df, dims, n_clusters):
@@ -25,19 +24,14 @@ def find_representatives(idf, dims, dim, sign, n_reps):
         .sort_values(by="score", ascending=False)
 
 def tag_correlations_df(idf):
-    df = M.movies_df(idf)
+    df = movies_df(idf)
     dims = [c for c in df.columns if c.startswith("q")]
-
     rows = []
-
     total_votes = float(df["imdbVotes"].sum())
-    print("total votes:", total_votes)
 
     for type in ["Genre", "Director", "Actors", "Language", "Country", "Writer"]:
-        print("--", type)
         values = list(df.head(500)[type].str.split("|").explode().dropna().unique())
         for value in values:
-            print(value)
             mask = df[type].str.split("|").apply(lambda xs: value in xs if isinstance(xs, list) else False)
             has_tag = mask.astype(int)
 
@@ -62,6 +56,3 @@ def tag_correlations_df(idf):
         })
 
     return pd.DataFrame(rows)
-
-if __name__ == "__main__":
-    print("No script.")

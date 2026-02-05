@@ -1,7 +1,6 @@
-import pickle
 import pandas as pd
 import numpy as np
-from src.smodel import movie_info as mi
+from src import movie_info as mi
 
 def explore_users(df):
     fig = px.histogram(df, "p3")

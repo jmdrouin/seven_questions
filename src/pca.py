@@ -1,6 +1,5 @@
 import numpy as np
 from sklearn.decomposition import PCA
-from surprise import accuracy
 from surprise.prediction_algorithms.predictions import Prediction
 
 class PcaSvd:

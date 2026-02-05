@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import pickle
-import src.smodel.model as Model
-import src.smodel.analyze_axes as Axes
+import src.model as Model
+import src.analyze_axes as Axes
 
 def read_csv(filename):
     return pd.read_csv("app/preprocessed_data/" + filename)

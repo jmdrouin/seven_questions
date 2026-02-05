@@ -1,4 +1,3 @@
-from src.smodel import prepare_data
 import pandas as pd
 from sklearn.preprocessing import QuantileTransformer
 
@@ -13,7 +12,7 @@ def encode_age(df):
     return df.drop(["Released"], axis=1)
 
 def movie_info():
-    df = prepare_data.top_movies() \
+    df = pd.read_csv("data/processed/top_movies.csv") \
         .set_index('movieId') \
         [['Title', 'Runtime', 'tomatoScore', 'Released']]
     df = encode_age(df)

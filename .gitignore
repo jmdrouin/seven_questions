@@ -9,6 +9,7 @@ streamlit_exercise/*
 
 # Private api keys
 */omdb_key.py
+omdb_key.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
