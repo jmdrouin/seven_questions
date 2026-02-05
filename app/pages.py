@@ -1,79 +1,12 @@
 import streamlit as st
-from src.smodel import model as Model
 import plotly.express as px
-from src.smodel import analyze_axes as Axes
-from src.app import figures
+from app import figures
 import numpy as np
 import re
-import pandas as pd
-from src.app.figures import problem_solution, section_title, big_divider, table, pill_box, phone_mockup
+from app.figures import problem_solution, section_title, big_divider, table, pill_box, phone_mockup
+import app.dataframes as dataframes
 from scipy.stats import norm
-
-@st.cache_resource
-def users_df():
-    bundle = Model.demo_bundle()
-    return bundle['users']
-
-@st.cache_resource
-def movies_df():
-    bundle = Model.demo_bundle()
-    return Model.movies_df(bundle['items'], nrows=200)
-
-@st.cache_resource
-def axes_df():
-    bundle = Model.demo_bundle()
-    df = bundle["axes"]
-
-    VALUE_LABELS = {
-        "tomatoScore": "Critically acclaimed",
-        "imdbRating": "Popular",
-        "BoxOffice": "Blockbuster",
-        "age_years": "Classic",
-        "imdbVotes": "Mainstream",
-        "United States": "American"
-    }
-
-    def format_categorical(feature, value):
-        if feature == "Genre":
-            return str(value)
-        if feature == "Director":
-            return f"Directed by {value}"
-        if feature == "Writer":
-            return f"Written by {value}"
-        if feature == "Actors":
-            return f"Starring {value}"
-        if feature == "Country":
-            return f"From {value}"
-        if feature == "Language":
-            return f"In {value}"
-        return f"{feature}: {value}"
-    
-    def make_name(row):
-        feature = row["type"]
-        value = row["value"]
-        # Case 1: special numeric features
-        if feature == "value" and value in VALUE_LABELS:
-            return VALUE_LABELS[value]
-        # Case 2: categorical features
-        return format_categorical(feature, value)
-    
-    df["name"] = df.apply(make_name, axis=1)
-    return df
-
-@st.cache_resource
-def movies_df_large():
-    bundle = Model.demo_bundle()
-    return Model.movies_df(bundle['items'], nrows=1000)
-
-@st.cache_resource
-def movies_df_full():
-    bundle = Model.demo_bundle()
-    return Model.movies_df(bundle['items'])
-
-@st.cache_data
-def typical_movies(idf, dim, sign):
-    dims = [c for c in idf.columns if c.startswith("q")]
-    return Axes.find_representatives(idf, dims, dim, sign, n_reps=4)
+import src.smodel.model as Model
 
 def control_panel(labels_left, labels_right, compact=False):
     values = []
@@ -128,9 +61,8 @@ def recommendations(values, bias_weight):
     with st.sidebar:
         st.divider()
         st.write("#### 10 Recommendations:")
-        df = Model.recommend_items(values, bias_weight, movies_df_large())
+        df = Model.recommend_items(values, bias_weight, dataframes.movies_large())
         st.dataframe(df.head(10)[["Title"]])
-
 
 def pills(texts, color = "#110011"):
     style = f"display:inline-block;border:1px solid white;padding:4px 8px;margin:2px;border-radius:12px;background:{color};font-size:0.85em;"
@@ -145,20 +77,19 @@ def demo():
     st.write("")
     st.divider()
 
-
     labels_left = []
     labels_right = []
-    idf = movies_df()
-    axes = axes_df()
+    idf = dataframes.movies()
+    axes = dataframes.axes()
     dims = [c for c in idf.columns if c.startswith("q")]
     for dim in dims:
-        candidates = typical_movies(idf, dim, 1)
+        candidates = dataframes.typical_movies(idf, dim, 1)
         labels_right.append({
             "films": candidates["Title"].values,
             "tags": list(axes.sort_values(by=dim, ascending=False).head(10)['name'])
         })
 
-        candidates = typical_movies(idf, dim, -1)
+        candidates = dataframes.typical_movies(idf, dim, -1)
         labels_left.append({
             "films": candidates["Title"].values,
             "tags": list(axes.sort_values(by=dim, ascending=True).head(10)['name'])
@@ -167,7 +98,7 @@ def demo():
     raw_values, bias_weight = control_panel(labels_left, labels_right)
 
     # Standardize values in terms of user percentiles
-    udf = users_df()
+    udf = dataframes.users()
     values = []
     increment = 0.1
     for i in range(len(raw_values)):
@@ -186,8 +117,8 @@ def explore_dim(idf, dims, k):
     idf["up"] = idf[dim] + idf["bias"]
     idf["down"] = -idf[dim] + idf["bias"]
 
-    typical_movies_left = typical_movies(idf, dim, -1)
-    typical_movies_right = typical_movies(idf, dim, 1)
+    typical_movies_left = dataframes.typical_movies(idf, dim, -1)
+    typical_movies_right = dataframes.typical_movies(idf, dim, 1)
 
     fig = figures.movie_scatter(
         idf,
@@ -214,7 +145,7 @@ def explore_dim(idf, dims, k):
     with col2:
         st.dataframe(typical_movies_right['Title'])
 
-    axes = axes_df()
+    axes = dataframes.axes()
     xdf = axes.sort_values(by=dim, ascending=True)
     #st.dataframe(xdf.head(10))
 
@@ -266,7 +197,7 @@ def movies():
         compact=True
     )
 
-    idf = movies_df()
+    idf = dataframes.movies()
     dims = [c for c in idf.columns if c.startswith("q")]
 
     big_divider()
@@ -275,7 +206,7 @@ def movies():
     st.write("##### 200 most rated movies:")
     st.dataframe(idf[["Title", "bias"] + dims], hide_index=True)
 
-    xdf = axes_df()
+    xdf = dataframes.axes()
     big_divider()
     section_title("Typical Tags")
     st.write("These dimensions correlate with different characteristics of the films (source: IMDB).")
@@ -302,11 +233,6 @@ def explore_user_dim(df, dims, k):
     dim = dims[k]
 
     fig = px.histogram(df, dim)
-    #precision = 0.1
-    #mu = df[dim].mean()
-    #sigma = df[dim].std
-    #from scipy.stats import norm
-    #p50 = norm.ppf(0.50, mu, sigma)  # == mu
 
     for i in [5, 25, 50, 75, 95]:
         x = np.percentile(df["p3"], i)
@@ -444,7 +370,7 @@ def model_1():
 @st.cache_resource
 def models_df():
     import pandas as pd
-    df = pd.read_json("explore_models_results.txt", lines=True)
+    df = pd.read_json("models/explore_models_results.txt", lines=True)
     for col in ["e", "f", "pca", "lr", "reg"]:
         df[col] = df["algo"].str.extract(fr"{re.escape(col)}=([0-9]*\.?[0-9]+)").astype(float)
     df["t"] = df["algo"].str.extract(fr"t=(.*)")

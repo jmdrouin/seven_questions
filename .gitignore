@@ -1,5 +1,6 @@
 # Don't include big database
 data/*/*
+*/preprocessed_data/*
 
 # Don't include tmp folder
 tmp/*

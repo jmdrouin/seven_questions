@@ -48,16 +48,9 @@ def explore_movies(idf):
         
         fig.show()
 
-    # Now let's recommend a movie...
-
 def recommend_items(p: list[float], bias_weight: float, df: pd.DataFrame):
     dims = ["q"+str(i) for i in range(len(p))]
     df["pq_score"] = df[dims].to_numpy() @ np.array(p)
     df["rec_score"] = df["pq_score"] + bias_weight * df["bias"]
     sorted = df.sort_values(by="rec_score", ascending=False)
     return sorted[dims + ['Title', 'pq_score', 'rec_score', 'bias']]
-
-def demo_bundle():
-    with open("models/demo_svd_pca.pkl", "rb") as f:
-        bundle = pickle.load(f)
-    return bundle

@@ -1,29 +1,9 @@
 import streamlit as st
-from src.app.pages import movies_df
-from src.app.top1000 import density_plot, ratings_distribution_plot
 import plotly.express as px
-import pandas as pd
-from src.app.figures import problem_solution, section_title, big_divider
 
-@st.cache_resource
-def ratings_df():
-    return pd.read_csv("data/ml-32m/ratings.csv", nrows=1000)
-
-@st.cache_data
-def load_aggregates():
-    return (
-        pd.read_csv("rating_distribution.csv"),
-        pd.read_csv("ratings_per_user.csv"),
-        pd.read_csv("ratings_per_movie.csv"),
-    )
-
-@st.cache_data
-def load_user_means():
-    return pd.read_csv("user_avg_rating.csv")
-
-@st.cache_data
-def load_movie_means():
-    return pd.read_csv("movie_avg_rating.csv")
+from app.top1000 import density_plot, ratings_distribution_plot
+from app.figures import problem_solution, section_title, big_divider
+import app.dataframes as dataframes
 
 def data():
     section_title("Data")
@@ -35,7 +15,7 @@ def data():
             Each row corresponds to a single explicit rating given by a user to a movie.
         """)
     with col1:
-        ratings = ratings_df()
+        ratings = dataframes.ratings()
         st.dataframe(ratings.sample(5, random_state=100), use_container_width=True)
     st.divider()
 
@@ -46,12 +26,12 @@ def data():
             Each row gives us information on a film.
         """)
     with col1:
-        mdf = movies_df() \
+        mdf = dataframes.movies() \
             .set_index("movieId") \
             [["Title", "Rated", "Released", "Runtime", "Genre", "Director","Writer","Actors","Language","Country","Awards","BoxOffice","Metascore","imdbRating", "imdbVotes", "tomatoScore"]]
         st.dataframe(mdf)
 
-    rating_dist, ratings_per_user, ratings_per_movie = load_aggregates()
+    rating_dist, ratings_per_user, ratings_per_movie = dataframes.aggregates()
     fig = px.bar(
         rating_dist,
         x="rating",
@@ -60,8 +40,8 @@ def data():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    users(ratings_per_user)
-    movies(ratings_per_movie)
+    users()
+    movies()
 
     big_divider()
     section_title("3. Sparsity of ratings")
@@ -75,18 +55,15 @@ def data():
     big_divider()
     section_title("4. Different rating scales")
 
-    fig = px.histogram(load_user_means(), x="avg_rating", nbins=30, title="Average rating per user")
+    fig = px.histogram(
+        dataframes.user_means(),
+        x="avg_rating",
+        nbins=30,
+        title="Average rating per user"
+    )
     fig.update_xaxes(title="User average rating")
     fig.update_yaxes(title="Number of users")
     st.plotly_chart(fig, use_container_width=True)
-
-    """
-    movie_means = load_movie_means()
-    fig = px.histogram(movie_means, x="avg_rating", nbins=60, title="Average rating per movie")
-    fig.update_xaxes(title="Average rating")
-    fig.update_yaxes(title="Number of movies")
-    st.plotly_chart(fig, use_container_width=True)
-    """
 
     ratings_distribution_plot()
 
@@ -95,17 +72,7 @@ def data():
         "Take biases into consideration (part of the model)."
     )
 
-    #imdb(mdf)
-
-@st.cache_data
-def load_user_signal():
-    return pd.read_csv("user_signal_strength.csv")
-
-@st.cache_data
-def load_ratings_per_user():
-    return pd.read_csv("ratings_per_user.csv")
-
-def users(ratings):
+def users():
     big_divider()
     section_title("1. Users")
 
@@ -114,8 +81,7 @@ def users(ratings):
         Some users rate only a handful of movies, while others rate hundreds or thousands.                
     """)
 
-    ratings_per_user = load_ratings_per_user()
-
+    ratings_per_user = dataframes.ratings_per_user()
     n_users = len(ratings_per_user)
     st.metric("Number of users", f"{n_users:,}")
 
@@ -142,7 +108,7 @@ def users(ratings):
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    user_signal = load_user_signal()
+    user_signal = dataframes.user_signal()
     st.divider()
     graph, control = st.columns([7, 2])
     with control:
@@ -172,15 +138,11 @@ def users(ratings):
         Each user has at least 28 ratings above and below their average."""
     )
 
-@st.cache_data
-def load_ratings_per_movie():
-    return pd.read_csv("ratings_per_movie.csv")
-
-def movies(ratings):
+def movies():
     big_divider()
     section_title("2. Movies")
 
-    ratings_per_movie = load_ratings_per_movie()
+    ratings_per_movie = dataframes.ratings_per_movie()
     n_movies = len(ratings_per_movie)
     st.metric("Number of movies", f"{n_movies:,}")
 
@@ -211,27 +173,3 @@ def movies(ratings):
         "There are too many obscure movies with barely any rating.",
         "Keep the 10k movies with the most ratings."
     )
-
-def imdb(mdf):
-    big_divider()
-    # TODO: Oops. Columns were duplicated during the merge
-    mdf = mdf.rename(columns={
-        "tomatoScore_y": "tomatoScore",
-        "Runtime_y": "Runtime",
-        "age_years_y": "age_years"
-    })
-    cols = ['Runtime', 'tomatoScore', 'age_years']
-
-    for col in cols:
-        st.write("### " + col)
-        fig = px.histogram(mdf, col, nbins=100)
-        st.plotly_chart(fig)
-
-        st.write("### " + col + " (standardized)")
-        col_std = col + "_std"
-        fig = px.histogram(mdf, col_std, nbins=100)
-        st.plotly_chart(fig)
-
-
-    # dims = ['Runtime', 'tomatoScore', 'age_years']
-    st.dataframe(mdf.head()[['tomatoScore']])

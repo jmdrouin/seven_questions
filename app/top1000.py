@@ -1,11 +1,7 @@
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-
-import numpy as np
-import pandas as pd
-import plotly.express as px
+import app.dataframes as dataframes
 
 def top_id_block(series: pd.Series, start_rank: int, end_rank: int):
     vc = series.value_counts()
@@ -52,7 +48,7 @@ def plot_presence(present: pd.DataFrame, title: str):
     return fig
 
 def density_plot():
-    df = pd.read_csv("top_1000ui_ratings.csv")
+    df = dataframes.top1000ui_ratings()
     WINDOW = 50
     max_n = 1000
     max_user_start = max(1, max_n - WINDOW + 1)
@@ -74,7 +70,7 @@ def density_plot():
 
 stars = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
 def rating_distribution(num_items, col):
-    ratings_df = pd.read_csv("top_1000ui_ratings.csv")
+    ratings_df = dataframes.top1000ui_ratings()
     top_items = (
         ratings_df.groupby(col)["rating"]
         .count()

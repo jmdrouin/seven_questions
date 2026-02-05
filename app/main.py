@@ -1,9 +1,14 @@
+# Allow import to reach for app module:
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import streamlit as st
-import src.app.pages as st_pages
-import src.app.data as data
+import app.pages as st_pages
+import app.data as data
 
-
-#st.title("Questions and Recommendations")
 st.sidebar.title("Seven Questions")
 
 st.set_page_config(layout="wide")
