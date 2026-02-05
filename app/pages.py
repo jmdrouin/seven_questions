@@ -1,11 +1,10 @@
 import streamlit as st
 import plotly.express as px
-from app import figures
 import numpy as np
-import re
-from app.figures import problem_solution, section_title, big_divider, table, pill_box, phone_mockup
-import app.dataframes as dataframes
 from scipy.stats import norm
+import re
+from app.components import section_title, big_divider, table, pill_box, phone_mockup, movie_scatter
+import app.dataframes as dataframes
 import src.model as Model
 
 def control_panel(labels_left, labels_right, compact=False):
@@ -120,7 +119,7 @@ def explore_dim(idf, dims, k):
     typical_movies_left = dataframes.typical_movies(idf, dim, -1)
     typical_movies_right = dataframes.typical_movies(idf, dim, 1)
 
-    fig = figures.movie_scatter(
+    fig = movie_scatter(
         idf,
         x=dim,
         y="bias",
@@ -474,7 +473,7 @@ def model_2():
 
     phone_mockup()
 
-    problem_solution(
+    components.problem_solution(
         """The model needs 50 dimensions to describe a user.
            Do we really need to ask 50 questions?""",
         "Extract the most important dimensions without losing too much information."

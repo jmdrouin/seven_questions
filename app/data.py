@@ -1,8 +1,7 @@
 import streamlit as st
 import plotly.express as px
-
 from app.top1000 import density_plot, ratings_distribution_plot
-from app.figures import problem_solution, section_title, big_divider
+from app.components import problem_solution, section_title, big_divider
 import app.dataframes as dataframes
 
 def data():
