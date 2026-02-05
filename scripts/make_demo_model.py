@@ -1,6 +1,6 @@
 # Script configuration:
 source = "data/processed/ratings_20k_users_train.csv"
-destination = "models/demo_svd_pca_dump.pkl"
+destination = "models/demo_svd_pca.pkl"
 
 # Allow import to reach for app module:
 import sys
