@@ -59,6 +59,5 @@ def recommend_items(p: list[float], bias_weight: float, df: pd.DataFrame):
 
 def demo_bundle():
     with open("models/demo_svd_pca.pkl", "rb") as f:
-    #with open("models/demo_svd.pkl", "rb") as f:
         bundle = pickle.load(f)
     return bundle
