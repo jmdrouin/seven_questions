@@ -11,7 +11,7 @@ def explore_users(df):
     fig.show()
 
 def movies_df(idf, nrows=None):
-    movies_info_df = pd.read_csv("shared_data/top_movies.csv")
+    movies_info_df = pd.read_csv("data/processed/top_movies.csv")
     movies_info_extended = mi.movie_info()[['Runtime_std', 'tomatoScore_std', 'age_years_std', 'age_years']]
     result = idf \
         .merge(movies_info_df, on="movieId") \

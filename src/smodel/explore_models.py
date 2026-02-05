@@ -1,12 +1,11 @@
 import pandas as pd
-from surprise import SVD, SVDpp, accuracy, Dataset, Reader, NormalPredictor, BaselineOnly
-#from surprise.model_selection import cross_validate
-from surprise.model_selection import train_test_split, GridSearchCV, KFold
+from surprise import SVD, accuracy, Dataset, Reader, NormalPredictor, BaselineOnly
+from surprise.model_selection import KFold
 import numpy as np
 import pickle
 from sklearn.metrics import ndcg_score, root_mean_squared_error
 from collections import defaultdict
-from src.smodel import pca, prepare_model, analyze_axes
+from src.smodel import pca, analyze_axes
 from datetime import datetime
 import json
 
@@ -45,11 +44,39 @@ def inv_cloglog(y, lower_bound=0, upper_bound=5.5):
     x = lower_bound + z * (upper_bound - lower_bound)
     return x
 
+def item_factors_df(algo, trainset):
+    q = algo.qi
+    b = algo.bi
+    factors = []
+    for inner_iid in range(trainset.n_items):
+        raw_iid = trainset.to_raw_iid(inner_iid)
+        vec = q[inner_iid]
+        bias = b[inner_iid]
+        factors.append([raw_iid, bias] + list(vec))
+
+    num_q_cols = len(factors[0]) - 2
+    q_cols = ["q" + str(i) for i in range(num_q_cols)]
+    return pd.DataFrame(factors, columns=["movieId", "bias"] + q_cols)
+
+def user_factors_df(algo, trainset):
+    p = algo.pu
+    b = algo.bu
+    factors = []
+    for inner_uid in range(trainset.n_users):
+        raw_uid = trainset.to_raw_uid(inner_uid)
+        vec = p[inner_uid]
+        bias = b[inner_uid]
+        factors.append([raw_uid, bias] + list(vec))
+
+    num_p_cols = len(factors[0]) - 2
+    p_cols = ["p" + str(i) for i in range(num_p_cols)]
+    return pd.DataFrame(factors, columns=["userId", "bias"] + p_cols)
+
 def explore_models():
     kf = KFold(n_splits=3, random_state=100, shuffle=True)
 
     transform = None #"cloglog"
-    df = pd.read_csv("data/ratings_20k_users_train.csv")
+    df = pd.read_csv("data/processed/ratings_20k_users_train.csv")
 
     if transform == "cloglog":
         df["rating"] = cloglog(df["rating"])
@@ -147,7 +174,7 @@ def explore_models():
             f.write("\n")
 
 def make_demo_model():
-    df = pd.read_csv("data/ratings_20k_users_train.csv")
+    df = pd.read_csv("data/processed/ratings_20k_users_train.csv")
     reader = Reader(rating_scale=(df["rating"].min(), df["rating"].max()))
     data = Dataset.load_from_df(df[["userId", "itemId", "rating"]], reader)
     trainset = data.build_full_trainset()
@@ -156,9 +183,8 @@ def make_demo_model():
     algo = pca.PcaSvd(svd, n_components=7)
 
 
-    idf = prepare_model.item_factors_df(algo, trainset)
+    idf = item_factors_df(algo, trainset)
     artifact = {
-        #"model": algo,
         "trainset": trainset,
         "created_at": datetime.now(),
         "dataset": "ratings_normal_users_small",

@@ -1,6 +1,7 @@
 # Don't include big database
 data/*/*
 */preprocessed_data/*
+models/*.pkl
 
 # Don't include tmp folder
 tmp/*

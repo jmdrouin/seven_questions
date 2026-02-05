@@ -1,7 +1,7 @@
 import os
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
+# Number of movies kept in the dataset
 N_MOVIES = 10000
 
 def _read_or_create(csv_file, make_dataframe):
@@ -16,7 +16,7 @@ def _read_or_create(csv_file, make_dataframe):
     return df
 
 def top_movies():
-    return _read_or_create("shared_data/top_movies.csv", make_top_movies_dataframe)
+    return _read_or_create("data/processed/top_movies.csv", make_top_movies_dataframe)
 
 def top_ratings():
     def make_top_ratings_dataframe():
@@ -26,14 +26,13 @@ def top_ratings():
         top_ratings = ratings_df[ratings_df["movieId"].isin(top_movies_["movieId"])]
 
         return top_ratings
-    
-    return _read_or_create("data/custom/top_ratings.csv", make_top_ratings_dataframe)
+    return _read_or_create("data/processed/top_ratings.csv", make_top_ratings_dataframe)
 
 def make_top_movies_dataframe():
-    df = pd.read_csv('data/custom/imdb.csv')
+    df = pd.read_csv('data/processed/imdb.csv')
     print(df.head())
 
-    # Drop values that seem to have been read wrong (TODO: check why these are wrong)
+    # Drop values that seem to have been read wrong when using IMDB's api
     prev_length = len(df)
     df = df[df['Title'] != "#DUPE#"]
     print(prev_length - len(df), "#DUPE# entries have been dropped.")
@@ -41,22 +40,24 @@ def make_top_movies_dataframe():
     df.info()
 
     # Keep only values that have full info
-    # TODO: review this. Some have just some metascore or similar missing.
     prev_length = len(df)
-    df = df.dropna(subset=["Rated", "Released", "Runtime", "Writer", "Director", "Actors", "Language", "Country", "imdbRating", "imdbVotes"])
+    relevant_fields = [
+        "Rated", "Released", "Runtime", "Writer", "Director", "Actors",
+        "Language", "Country", "imdbRating", "imdbVotes"
+    ]
+    df = df.dropna(subset=relevant_fields)
     print(prev_length - len(df), "entries with missing values have been dropped.")
 
     # Keep the top N
     df = df.head(N_MOVIES)
 
     # Merge with the base database
-    movies_df = pd.read_csv('data/custom/extended_movies.csv')
+    movies_df = pd.read_csv('data/processed/extended_movies.csv')
     combined_df = df.merge(movies_df, left_on="imdbID", right_on="imdb_tag", how="inner")
 
     combined_df.info()
     print(combined_df.head())
     return combined_df
-
 
 def main():
     # Select users that have at least some good and bad ratings,
@@ -121,7 +122,6 @@ def main():
         .rename({"movieId": "itemId"}, axis=1) \
         [ ["userId", "itemId", "rating"] ]
 
-
     ratings_100k_test = ratings_100k_users \
         .groupby("userId", group_keys=False) \
         .sample(n=27, random_state=100)
@@ -133,19 +133,16 @@ def main():
         .sample(n=27, random_state=100)
     ratings_20k_train = ratings_20k_users \
         .drop(ratings_20k_test.index)
-
-    print("Writing data/ratings_100k_users_train.csv... size=", len(ratings_100k_train))
-    ratings_100k_train.to_csv("data/ratings_100k_users_train.csv", index=False)
-
-    print("Writing data/ratings_100k_users_test.csv... size=", len(ratings_100k_test))
-    ratings_100k_test.to_csv("data/ratings_100k_users_test.csv", index=False)
-
-    print("Writing data/ratings_20k_users_train.csv... size=", len(ratings_20k_train))
-    ratings_20k_train.to_csv("data/ratings_20k_users_train.csv", index=False)
-
-    print("Writing data/ratings_20k_users_test.csv... size=", len(ratings_20k_test))
-    ratings_20k_test.to_csv("data/ratings_20k_users_test.csv", index=False)
-
+    
+    def write_csv(file, data):
+        dest = "data/processed/" + file
+        print("Writing to", file, "-- size =", len(data))
+        data.to_csv(dest + "ratings_100k_users_train.csv", index=False)
+    
+    write_csv("ratings_100k_users_train.csv", ratings_100k_train)
+    write_csv("ratings_100k_users_test.csv", ratings_100k_test)
+    write_csv("ratings_20k_users_train.csv", ratings_20k_train)
+    write_csv("ratings_20k_users_test.csv", ratings_20k_test)
 
 if __name__ == "__main__":
     main()

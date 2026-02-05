@@ -24,7 +24,7 @@ def predictor(model):
 
 def get_split_data():
     df = pd \
-        .read_csv("data/ratings_normal_users_small.csv") \
+        .read_csv("data/processed/ratings_normal_users_small.csv") \
         .drop("timestamp", axis=1) \
         .rename({"movieId": "itemId"}, axis=1) \
         [["userId", "itemId", "rating"]]
