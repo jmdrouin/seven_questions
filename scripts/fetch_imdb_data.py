@@ -1,15 +1,21 @@
+#------------------------------------------------------------
+# fetch_imdb_data.py
+# Fetch the next unprocessed movies with OMDB api and
+# add their data to the imdb csv file.
+#------------------------------------------------------------
+
+# Config:
+IMDB_CSV = "data/processed/imdb.csv"
+NUM_ITEMS = 50
+REPEAT = 5
+SLEEP = 0.1
+
 # Allow import to reach for app module:
 import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-
-# Fetch data from imdb to complete database imdb.csv
-IMDB_CSV = "data/processed/imdb.csv"
-NUM_ITEMS = 50
-REPEAT = 5
-SLEEP = 0.1
 
 import pandas as pd
 import requests

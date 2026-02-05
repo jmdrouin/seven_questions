@@ -1,3 +1,9 @@
+#------------------------------------------------------------
+# explore_models.py
+# Train and measure the results of each prediction model
+# inside the test_plan.
+#------------------------------------------------------------
+
 # Allow import to reach for app module:
 import sys
 from pathlib import Path

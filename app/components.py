@@ -1,20 +1,6 @@
 import plotly.express as px
 import streamlit as st
 
-def movie_scatter(idf, x=None, y="bias", title=None):
-    fig = px.scatter(
-        idf,
-        x=x,
-        y=y,
-        hover_name="Title"
-    )
-    fig.update_yaxes(showticklabels=False, ticks="")
-    fig.update_layout(
-        title=title,
-        height=400,
-    )
-    return fig
-
 def problem_solution(problem, solution):
     col1, col2 = st.columns(2)
 
@@ -265,4 +251,11 @@ def phone_mockup():
         </div>
         """,
         unsafe_allow_html=True,
+    )
+
+def pills(texts, color = "#110011"):
+    style = f"display:inline-block;border:1px solid white;padding:4px 8px;margin:2px;border-radius:12px;background:{color};font-size:0.85em;"
+    st.markdown(
+        "".join(f"<span style='{style}'>{text}</span>" for text in texts),
+        unsafe_allow_html=True
     )

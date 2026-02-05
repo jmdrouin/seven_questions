@@ -1,3 +1,9 @@
+#------------------------------------------------------------
+# make_demo_model.py
+# Prepare a demo SVD/PCA model that can be used inside
+# the streamlit app.
+#------------------------------------------------------------
+
 # Script configuration:
 source = "data/processed/ratings_20k_users_train.csv"
 destination = "models/demo_svd_pca.pkl"

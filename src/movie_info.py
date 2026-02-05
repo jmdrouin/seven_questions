@@ -2,6 +2,9 @@ import pandas as pd
 from sklearn.preprocessing import QuantileTransformer
 
 def encode_age(df):
+    """
+    Replace the release data of a movie with its age on 2026-01-01
+    """
     df["Released"] = pd.to_datetime(
         df["Released"],
         format="%d %b %Y",
@@ -12,6 +15,9 @@ def encode_age(df):
     return df.drop(["Released"], axis=1)
 
 def movie_info():
+    """
+    Return a dataframe with normalized 'Runtime', 'tomatoScore' and 'age_years' data
+    """
     df = pd.read_csv("data/processed/top_movies.csv") \
         .set_index('movieId') \
         [['Title', 'Runtime', 'tomatoScore', 'Released']]

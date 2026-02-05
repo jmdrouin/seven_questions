@@ -1,5 +1,7 @@
-# Preprocess data to be used efficiently in the streamlit app.
-# Usage: $ python app/preprocessing.py 
+#------------------------------------------------------------
+# process_app_data.py
+# Preprocess data needed for the streamlit app.
+#------------------------------------------------------------
 
 import pandas as pd
 

@@ -2,6 +2,9 @@
 An interactive tool for movie recommendations.
 Author: Jerome Morin-Drouin (jmdrouin@gmail.com)
 
+## Streamlit app:
+https://g8oiac3bowmamsb2akcgfp.streamlit.app
+
 ## Data:
 Download the database ml-32m.zip from
 https://grouplens.org/datasets/movielens/

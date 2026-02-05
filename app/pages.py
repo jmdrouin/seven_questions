@@ -1,251 +1,7 @@
 import streamlit as st
 import plotly.express as px
-import numpy as np
-from scipy.stats import norm
-import re
-from app.components import section_title, big_divider, table, pill_box, phone_mockup, movie_scatter
+from app.components import section_title, big_divider, table, pill_box, phone_mockup, problem_solution
 import app.dataframes as dataframes
-import src.model as Model
-
-def control_panel(labels_left, labels_right, compact=False):
-    values = []
-    for i in range(len(labels_left)):
-        colL, colS, colR = st.columns([2, 1, 2])
-
-        with colL:
-            pills(labels_left[i]["films"])
-            pills(labels_left[i]["tags"], "#3535DC")
-
-        with colR:
-            pills(labels_right[i]["films"])
-            pills(labels_right[i]["tags"], "#3535DC")
-
-        with colS:
-            v = st.slider(f"p{i}", -1.0, 1.0, 0.0, step=0.1, label_visibility="collapsed")
-            values.append(v)
-        
-        if compact==False:
-            st.divider()
-            
-    if compact == False:
-        bias_weight = weight_picker()
-    else:
-        bias_weight = 0.5
-
-    return (values, bias_weight)
-
-def weight_picker():
-    col_left, col_slider, col_right = st.columns([1, 3, 1])
-
-    with col_left:
-        st.markdown("<div style='text-align:right; opacity:0.8;'>Just for you</div>",
-                    unsafe_allow_html=True)
-
-    with col_slider:
-        value = st.slider(
-            "",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.5,
-            step=0.05,
-            label_visibility="collapsed",
-        )
-
-    with col_right:
-        st.markdown("<div style='text-align:left; opacity:0.8;'>Well rated</div>",
-                    unsafe_allow_html=True)
-    return value
-
-def recommendations(values, bias_weight):
-    with st.sidebar:
-        st.divider()
-        st.write("#### 10 Recommendations:")
-        df = Model.recommend_items(values, bias_weight, dataframes.movies_large())
-        st.dataframe(df.head(10)[["Title"]])
-
-def pills(texts, color = "#110011"):
-    style = f"display:inline-block;border:1px solid white;padding:4px 8px;margin:2px;border-radius:12px;background:{color};font-size:0.85em;"
-    st.markdown(
-        "".join(f"<span style='{style}'>{text}</span>" for text in texts),
-        unsafe_allow_html=True
-    )
-
-def demo():
-    section_title("What do you feel like watching?")
-
-    st.write("")
-    st.divider()
-
-    labels_left = []
-    labels_right = []
-    idf = dataframes.movies()
-    axes = dataframes.axes()
-    dims = [c for c in idf.columns if c.startswith("q")]
-    for dim in dims:
-        candidates = dataframes.typical_movies(idf, dim, 1)
-        labels_right.append({
-            "films": candidates["Title"].values,
-            "tags": list(axes.sort_values(by=dim, ascending=False).head(10)['name'])
-        })
-
-        candidates = dataframes.typical_movies(idf, dim, -1)
-        labels_left.append({
-            "films": candidates["Title"].values,
-            "tags": list(axes.sort_values(by=dim, ascending=True).head(10)['name'])
-        })
-
-    raw_values, bias_weight = control_panel(labels_left, labels_right)
-
-    # Standardize values in terms of user percentiles
-    udf = dataframes.users()
-    values = []
-    increment = 0.1
-    for i in range(len(raw_values)):
-        dim = "p" + str(i)
-        percentile = (raw_values[i] + 1 + 0.5 * increment) / (2 + increment)
-        mu = udf[dim].mean()
-        sigma = udf[dim].std()
-        value = norm.ppf(percentile, mu, sigma)
-        values.append(value)
-
-    recommendations(values, bias_weight)
-
-def explore_dim(idf, dims, k):
-    dim = dims[k]
-
-    idf["up"] = idf[dim] + idf["bias"]
-    idf["down"] = -idf[dim] + idf["bias"]
-
-    typical_movies_left = dataframes.typical_movies(idf, dim, -1)
-    typical_movies_right = dataframes.typical_movies(idf, dim, 1)
-
-    fig = movie_scatter(
-        idf,
-        x=dim,
-        y="bias",
-        title=f"Top 200 films along axis {dim}"
-    )
-    st.plotly_chart(fig)
-
-    st.divider()
-    col0, col1, col2 = st.columns([1,2,2])
-    with col1:
-        st.write("#### Left side (-)")
-    with col2:
-        st.write("#### Right side (+)")
-    st.divider()
-
-    col0, col1, col2 = st.columns([1,2,2])
-    with col0:
-        st.write("#### Typical films")
-        st.write(f"""(Among the top 200 films, from different clusters.)""")
-    with col1:
-        st.dataframe(typical_movies_left['Title'])
-    with col2:
-        st.dataframe(typical_movies_right['Title'])
-
-    axes = dataframes.axes()
-    xdf = axes.sort_values(by=dim, ascending=True)
-    #st.dataframe(xdf.head(10))
-
-    st.divider()
-    col0, col1, col2 = st.columns([1,2,2])
-    with col0:
-        st.write("#### Correlated variables")
-        st.write(f"""(Among IMDB variables that apply to at least 1% of the ratings.)""")
-    with col2:
-        x=dim
-        fig = px.bar(
-            xdf.sort_values(by=x).tail(10),
-            x=x,
-            y="name",
-            orientation="h"
-        )
-        fig.update_layout(
-            xaxis_title=f"correlation with +{dim}",
-            yaxis_title="",
-        )
-        st.plotly_chart(fig)
-
-    with col1:
-        xdf['reverse'] = -xdf[x]
-        fig = px.bar(
-            xdf.sort_values(by='reverse').tail(10),
-            x='reverse',
-            y="name",
-            orientation="h",
-            title="",
-        )
-        fig.update_layout(
-            xaxis_title=f"correlation with -{dim}",
-            yaxis_title="",
-        )
-        st.plotly_chart(fig)
-
-def movies():
-    section_title("Seven Questions")
-    st.write("")
-
-    st.divider()
-    st.write("### A question that makes sense:")
-    control_panel(
-        [{"films": ['Typical Film A', 'Typical Film B', 'Typical Film C', 'Typical Film D'],
-          "tags": ["Typical Genre", "Some Director", "Other indicator"]}],
-        [{"films": ['Typical Film A', 'Typical Film B', 'Typical Film C', 'Typical Film D'],
-          "tags": ["Typical Genre", "Some Director", "Other indicator"]}],
-        compact=True
-    )
-
-    idf = dataframes.movies()
-    dims = [c for c in idf.columns if c.startswith("q")]
-
-    big_divider()
-    section_title("Typical Films")
-    st.write("All films $i$ can now be described with 8 numbers: $b_i, q^0_i, q^1_i, ..., q^6_i$")
-    st.write("##### 200 most rated movies:")
-    st.dataframe(idf[["Title", "bias"] + dims], hide_index=True)
-
-    xdf = dataframes.axes()
-    big_divider()
-    section_title("Typical Tags")
-    st.write("These dimensions correlate with different characteristics of the films (source: IMDB).")
-    st.write("##### Genres, Actors and other tags:")
-    st.dataframe(xdf[["name"] + dims + ["value", "type", "popularity"]], hide_index=True)
-
-    big_divider()
-    with st.sidebar:
-        st.divider()
-        st.write("## Dimension")
-        page = st.radio(
-            "",
-            options=list(range(len(dims))),   
-            index=0,
-            horizontal=True,
-            key="page_index",
-        )
-
-    section_title(f"Question for axis {page}")
-    explore_dim(idf, dims, page)
-
-
-def explore_user_dim(df, dims, k):
-    dim = dims[k]
-
-    fig = px.histogram(df, dim)
-
-    for i in [5, 25, 50, 75, 95]:
-        x = np.percentile(df["p3"], i)
-        text = str(i)+"%\nx=" + str(round(x, 2))
-        fig.add_vline(x=x, line_dash="solid", line_color="red", annotation_text=text)
-    st.plotly_chart(fig)
-
-def users():
-    st.write("### Users")
-    udf = users_df()
-    dims = [c for c in udf.columns if c.startswith("p")]
-    for k in range(len(dims)):
-        st.write("### Dimension " + dims[k])
-        explore_user_dim(udf, dims, k)
 
 def introduction():
     section_title("Introduction")
@@ -366,15 +122,6 @@ def model_1():
     """)
     st.write("NCDG@3 = DCG@3 / IDCG@3 = 7.13 / 10.15 = 0.7025")
 
-@st.cache_resource
-def models_df():
-    import pandas as pd
-    df = pd.read_json("models/explore_models_results.txt", lines=True)
-    for col in ["e", "f", "pca", "lr", "reg"]:
-        df[col] = df["algo"].str.extract(fr"{re.escape(col)}=([0-9]*\.?[0-9]+)").astype(float)
-    df["t"] = df["algo"].str.extract(fr"t=(.*)")
-    return df
-
 def model_2():
     st.write("# Optimizing the prediction model")
     st.write("""
@@ -382,7 +129,7 @@ def model_2():
         - Trained on a slice of 20k users (for speed reasons)
     """)
 
-    df = models_df()
+    df = dataframes.models()
     f_results = df[df["lr"].isna() & ~df["f"].isna() & df["pca"].isna() & df["t"].isna()]
 
     section_title("1. Number of latent factors")
@@ -473,14 +220,14 @@ def model_2():
 
     phone_mockup()
 
-    components.problem_solution(
+    problem_solution(
         """The model needs 50 dimensions to describe a user.
            Do we really need to ask 50 questions?""",
         "Extract the most important dimensions without losing too much information."
     )
 
 def model_3():
-    df = models_df()
+    df = dataframes.models()
 
     section_title("Reducing dimensions with PCA")
     st.write("(Principal Component Analysis)")
@@ -581,38 +328,6 @@ def model_3():
         It's a tradeoff. Fewer dimensions is more convenient to use, more dimensions gives more precise results.
         We keep 7 dimensions for this demo.
     """)
-
-def preprocessing():
-    st.write("### 1. Keep 10K movies with the most ratings")
-
-    st.write("### 2. Keep 100K users with the most divergent ratings")
-    st.dataframe(users_df().head())
-
-    mdf = movies_df_full()
-    mdf = mdf \
-        .set_index('movieId') \
-        .drop(columns=mdf.filter(regex=r"^q\d+$").columns) \
-        .drop(columns=['Unnamed: 0', 'bias', 'index'])
-    
-    st.dataframe(
-        mdf.head(3).T,
-        use_container_width=True,
-        height=400
-    )
-
-    fig = px.histogram(
-        mdf,
-        x="ratings_count",
-        nbins=50,
-        title="Number of ratings per movie",
-    )
-
-    fig.update_xaxes(title="Number of ratings")
-    fig.update_yaxes(title="Number of movies")
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.write(mdf.describe())
 
 def conclusion():
     st.write("# Next Steps...")

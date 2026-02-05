@@ -3,6 +3,7 @@ import pandas as pd
 import pickle
 import src.model as Model
 import src.analyze_axes as Axes
+import re
 
 def read_csv(filename):
     return pd.read_csv("app/preprocessed_data/" + filename)
@@ -112,3 +113,12 @@ def typical_movies(idf, dim, sign):
 @st.cache_data
 def top1000ui_ratings():
     return read_csv("top_1000ui_ratings.csv")
+
+@st.cache_resource
+def models():
+    import pandas as pd
+    df = pd.read_json("models/explore_models_results.txt", lines=True)
+    for col in ["e", "f", "pca", "lr", "reg"]:
+        df[col] = df["algo"].str.extract(fr"{re.escape(col)}=([0-9]*\.?[0-9]+)").astype(float)
+    df["t"] = df["algo"].str.extract(fr"t=(.*)")
+    return df

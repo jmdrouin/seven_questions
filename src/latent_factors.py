@@ -1,6 +1,13 @@
 import pandas as pd
 
 def item_factors_df(algo, trainset):
+    """
+    Return a dataframe with latent factors (q_i) and bias (b_i)
+    for each movie in the trainset.
+    
+    :param algo: The trained algorithm. Must contain qi, bi, pu and bu values.
+    :param trainset: The trainset containing all users and items considered.
+    """
     q = algo.qi
     b = algo.bi
     factors = []
@@ -15,6 +22,13 @@ def item_factors_df(algo, trainset):
     return pd.DataFrame(factors, columns=["movieId", "bias"] + q_cols)
 
 def user_factors_df(algo, trainset):
+    """
+    Return a dataframe with latent factors (p_u) and bias (b_u)
+    for each user in the trainset.
+    
+    :param algo: The trained algorithm. Must contain qi, bi, pu and bu values.
+    :param trainset: The trainset containing all users and items considered.
+    """
     p = algo.pu
     b = algo.bu
     factors = []

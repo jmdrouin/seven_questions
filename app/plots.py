@@ -3,6 +3,20 @@ import plotly.express as px
 import streamlit as st
 import app.dataframes as dataframes
 
+def movie_scatter(idf, x=None, y="bias", title=None):
+    fig = px.scatter(
+        idf,
+        x=x,
+        y=y,
+        hover_name="Title"
+    )
+    fig.update_yaxes(showticklabels=False, ticks="")
+    fig.update_layout(
+        title=title,
+        height=400,
+    )
+    return fig
+
 def top_id_block(series: pd.Series, start_rank: int, end_rank: int):
     vc = series.value_counts()
     return list(vc.iloc[start_rank - 1:end_rank].index)

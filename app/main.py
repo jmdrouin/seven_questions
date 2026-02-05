@@ -5,14 +5,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# Imports
 import streamlit as st
 import app.pages as st_pages
-import app.data as data
+from app.demo import demo as demo_page
+from app.data import data as data_page
+from app.movies import movies as movies_page
 
-st.sidebar.title("Seven Questions")
-
-st.set_page_config(layout="wide")
-st.markdown("""
+# App
+style = """
     <style>
     /* Increase base font size */
     html, body, [class*="css"]  {
@@ -38,16 +39,21 @@ st.markdown("""
         padding: 0.8rem 1.2rem;
     }
     </style>
-""", unsafe_allow_html=True)
+"""
+
+st.sidebar.title("Seven Questions")
+
+st.set_page_config(layout="wide")
+st.markdown(style, unsafe_allow_html=True)
 
 pages = {
     "Introduction": st_pages.introduction,
-    "Data": data.data,
+    "Data": data_page,
     "Model": st_pages.model_1,
     "Optimization": st_pages.model_2,
     "Reducing Dimensions": st_pages.model_3,
-    "Seven Questions": st_pages.movies,
-    "Demo": st_pages.demo,
+    "Seven Questions": movies_page,
+    "Demo": demo_page,
     "Next Steps": st_pages.conclusion
 }
 

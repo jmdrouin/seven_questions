@@ -1,3 +1,8 @@
+#------------------------------------------------------------
+# prepare_data.py
+# Prepare the large csv files necessary to train a model.
+#------------------------------------------------------------
+
 import os
 import pandas as pd
 

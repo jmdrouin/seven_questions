@@ -2,14 +2,11 @@ import pandas as pd
 import numpy as np
 from src import movie_info as mi
 
-def explore_users(df):
-    fig = px.histogram(df, "p3")
-    for i in [5, 25, 50, 75, 95]:
-        x = np.percentile(df["p3"], i)
-        fig.add_vline(x=x, line_dash="solid", annotation_text=str(i)+"%")
-    fig.show()
-
 def movies_df(idf, nrows=None):
+    """
+    Return a dataframe of movies combining the imdb data, movieIds and preprocessed values for
+    a few key columns.
+    """
     movies_info_df = pd.read_csv("data/processed/top_movies.csv")
     movies_info_extended = mi.movie_info()[['Runtime_std', 'tomatoScore_std', 'age_years_std', 'age_years']]
     result = idf \
@@ -21,33 +18,12 @@ def movies_df(idf, nrows=None):
     else:
         return result.head(nrows)
 
-def explore_movies(idf):
-    dims = [c for c in idf.columns if c.startswith("q")]
-    idf = movies_df(idf, nrows=500)
-
-    for dim in dims:
-        print("----------", dim, "---------")
-        print()
-        idfx = idf.sort_values(by=dim)[dims + ["Title"]]
-        print(idfx.head())
-        print(idfx.tail())
-        print(len(idfx))
-
-        fig = px.scatter(
-            idf,
-            x=dim,
-            y="ratings_mean",
-            hover_name="Title"
-        )
-        fig.update_yaxes(visible=False)
-        fig.update_layout(
-            title=dim,
-            height=400,
-        )
-        
-        fig.show()
-
 def recommend_items(p: list[float], bias_weight: float, df: pd.DataFrame):
+    """
+    Return a dataframe of items sorted by priority of recommendation,
+    in a way that fits the user taste profile "p".
+    bias_weight controls the impact that the movie bias has on the recommendation.
+    """
     dims = ["q"+str(i) for i in range(len(p))]
     df["pq_score"] = df[dims].to_numpy() @ np.array(p)
     df["rec_score"] = df["pq_score"] + bias_weight * df["bias"]
