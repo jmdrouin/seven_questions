@@ -1,5 +1,4 @@
 from src.smodel import model as M
-import numpy as np
 import pandas as pd
 
 from sklearn.cluster import KMeans
@@ -7,7 +6,6 @@ from sklearn.cluster import KMeans
 def find_clusters(df, dims, n_clusters):
     kmeans = KMeans(n_clusters=n_clusters, n_init=20, random_state=0)
     labels = kmeans.fit_predict(df[dims])
-    centers = kmeans.cluster_centers_
     df["cluster"] = labels
     return df
 
@@ -17,11 +15,11 @@ def find_representatives(idf, dims, dim, sign, n_reps):
     idf['score'] = sign * idf[dim] + bias_weight * idf["bias"]
     candidates = idf \
         .sort_values(by="score", ascending=False) \
-        [dims + ['Title', "movieId", "score"]] \
+        [dims + ['Title', "movieId", "score", "bias"]] \
         .head(20)
     
     clusters = find_clusters(candidates, other_dims, n_clusters=n_reps)
-    
+
     return clusters \
         .loc[clusters.groupby("cluster")["score"].idxmax()] \
         .sort_values(by="score", ascending=False)
