@@ -57,7 +57,6 @@ def plot_presence(present: pd.DataFrame, title: str):
         ticktext=["NO", "YES"]
     ))
 
-    # Tight margins
     fig.update_layout(margin=dict(l=10, r=10, t=50, b=10))
     return fig
 
